@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {completeAgentRequestInput,isWorkerTokenValid} from "../src/http/agent-worker.js";
+import {completeAgentRequestInput,failAgentRequestInput,isWorkerTokenValid} from "../src/http/agent-worker.js";
 
 test("agent worker token comparison accepts only the configured secret",()=>{
  const secret="a-long-random-worker-secret-with-at-least-32-characters";
@@ -14,4 +14,11 @@ test("agent completion requires evidence and a non-final suggested status",()=>{
  assert.equal(completeAgentRequestInput.safeParse(valid).success,true);
  assert.equal(completeAgentRequestInput.safeParse({...valid,evidence:""}).success,false);
  assert.equal(completeAgentRequestInput.safeParse({...valid,suggestedStatus:"done"}).success,false);
+});
+
+test("agent worker failures require a bounded non-empty reason",()=>{
+ assert.equal(failAgentRequestInput.safeParse({reason:"Provider returned a temporary error."}).success,true);
+ assert.equal(failAgentRequestInput.safeParse({reason:""}).success,false);
+ assert.equal(failAgentRequestInput.safeParse({reason:"x".repeat(1001)}).success,false);
+ assert.equal(failAgentRequestInput.safeParse({reason:"Failure",extra:"unexpected"}).success,false);
 });
