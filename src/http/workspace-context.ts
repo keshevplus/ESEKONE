@@ -22,8 +22,9 @@ export async function withAuthorizedWorkspace(
  try{
   const [user]=await db.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1);
   if(!user)return res.status(403).json({error:"account_not_provisioned"});
-  const [membership]=await withUserContext(user.id,tx=>tx.select({id:memberships.id,role:memberships.role}).from(memberships)
+  const membershipRows=await withUserContext<Array<{id:string;role:string}>>(user.id,async tx=>await tx.select({id:memberships.id,role:memberships.role}).from(memberships)
    .where(and(eq(memberships.workspaceId,workspaceId),eq(memberships.userId,user.id),eq(memberships.status,"active"))).limit(1));
+  const membership=membershipRows[0];
   if(!membership)return res.status(403).json({error:"workspace_access_denied"});
   if(write&&!canWriteRole(membership.role))return res.status(403).json({error:"insufficient_workspace_role"});
   const result=await withWorkspaceContext(workspaceId,user.id,tx=>action(tx,user.id,workspaceId));
