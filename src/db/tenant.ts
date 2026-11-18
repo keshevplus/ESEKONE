@@ -40,6 +40,20 @@ export async function withWorkspaceContext<T>(
   });
 }
 
+/** Resolve a verified OIDC subject to its own local account under users-table RLS. */
+export async function withIdentityContext<T>(
+  identitySubject: string,
+  run: (tx: any) => Promise<T>,
+): Promise<T> {
+  if (!db) throw new Error("DATABASE_URL is not configured");
+  if (!identitySubject.trim()) throw new Error("Identity subject is required");
+
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.identity_subject', ${identitySubject}, true)`);
+    return run(tx);
+  });
+}
+
 /** Establish a user-only context for listing the caller's own memberships. */
 export async function withUserContext<T>(
   userId: string,
