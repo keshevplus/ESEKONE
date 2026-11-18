@@ -5,9 +5,9 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 
 ## Foundation
 - [x] **EKO-001 — Establish independent platform architecture** — `done` — Modular-monolith boundaries, API runtime, three-repository responsibilities and release flow documented.
-- [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `in_progress` — Initial PostgreSQL schema, separate migration/runtime roles, least-privilege grants and forced RLS are implemented; provision a dedicated managed database and run migrations before integration.
-- [ ] **EKO-003 — Complete and verify tenant isolation** — `in_progress` — OIDC verification, membership checks, forced PostgreSQL RLS and cross-tenant read/write denial tests are implemented in CI; validate the same controls against the provisioned production database.
-- [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Typecheck, production build, unit tests, PostgreSQL migrations and cross-tenant RLS integration tests run in CI; production environment and broader security checks remain.
+- [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `in_progress` — Neon selected. Neon-specific setup guide and role model are documented; actual Neon project/branches, protected credentials, migrations and live connection validation remain.
+- [ ] **EKO-003 — Complete and verify tenant isolation** — `in_progress` — OIDC verification, membership checks, forced PostgreSQL RLS and cross-tenant read/write denial tests are implemented in CI; validate the same controls against the provisioned Neon production database.
+- [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Typecheck, production build, unit tests, PostgreSQL migrations and cross-tenant RLS integration tests run in CI; live Neon validation and broader security checks remain.
 
 ## SaaS platform
 - [ ] **EKO-010 — Organization and workspace provisioning** — `in_progress` — Verified-identity onboarding creates an organization, first workspace and owner membership; invitation and multi-workspace administration remain.
