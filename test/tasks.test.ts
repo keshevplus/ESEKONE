@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createWorkItem,updateWorkItem,createAgentRequest,canTransitionWorkItem,canWriteRole} from "../src/http/tasks.js";
+import {createWorkItem,updateWorkItem,createAgentRequest,canTransitionWorkItem} from "../src/http/tasks.js";
+import {canWriteRole} from "../src/http/workspace-context.js";
 
 test("work item requires a title and applies safe defaults",()=>{
  const result=createWorkItem.safeParse({title:"Prepare monthly report"});

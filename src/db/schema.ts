@@ -1,4 +1,4 @@
-import {boolean,index,pgTable,text,timestamp,uniqueIndex,uuid} from "drizzle-orm/pg-core";
+import {boolean,foreignKey,index,pgTable,text,timestamp,uniqueIndex,uuid} from "drizzle-orm/pg-core";
 const createdAt=()=>timestamp("created_at",{withTimezone:true}).notNull().defaultNow();
 const updatedAt=()=>timestamp("updated_at",{withTimezone:true}).notNull().defaultNow();
 export const users=pgTable("users",{
@@ -48,9 +48,23 @@ export const contacts=pgTable("contacts",{
  index("contacts_workspace_email_idx").on(t.workspaceId,t.email)
 ]);
 
+export const projects=pgTable("projects",{
+ id:uuid("id").defaultRandom().primaryKey(),
+ workspaceId:uuid("workspace_id").notNull().references(()=>workspaces.id,{onDelete:"cascade"}),
+ name:text("name").notNull(),description:text("description"),
+ status:text("status").notNull().default("planned"),
+ ownerUserId:uuid("owner_user_id").references(()=>users.id,{onDelete:"set null"}),
+ startAt:timestamp("start_at",{withTimezone:true}),dueAt:timestamp("due_at",{withTimezone:true}),
+ createdByUserId:uuid("created_by_user_id").references(()=>users.id,{onDelete:"set null"}),
+ createdAt:createdAt(),updatedAt:updatedAt()
+},t=>[
+ uniqueIndex("projects_id_workspace_unique").on(t.id,t.workspaceId),
+ index("projects_workspace_status_idx").on(t.workspaceId,t.status,t.updatedAt)
+]);
 export const workItems=pgTable("work_items",{
  id:uuid("id").defaultRandom().primaryKey(),
  workspaceId:uuid("workspace_id").notNull().references(()=>workspaces.id,{onDelete:"cascade"}),
+ projectId:uuid("project_id"),
  title:text("title").notNull(),description:text("description"),
  status:text("status").notNull().default("backlog"),priority:text("priority").notNull().default("normal"),
  dueAt:timestamp("due_at",{withTimezone:true}),
@@ -61,7 +75,8 @@ export const workItems=pgTable("work_items",{
  createdAt:createdAt(),updatedAt:updatedAt()
 },t=>[
  index("work_items_workspace_status_idx").on(t.workspaceId,t.status,t.updatedAt),
- index("work_items_workspace_assignee_idx").on(t.workspaceId,t.assignedUserId,t.status)
+ index("work_items_workspace_assignee_idx").on(t.workspaceId,t.assignedUserId,t.status),
+ foreignKey({name:"work_items_project_workspace_fk",columns:[t.projectId,t.workspaceId],foreignColumns:[projects.id,projects.workspaceId]}).onDelete("restrict")
 ]);
 export const workItemEvents=pgTable("work_item_events",{
  id:uuid("id").defaultRandom().primaryKey(),
