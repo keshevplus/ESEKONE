@@ -9,3 +9,10 @@ export async function withWorkspaceContext<T>(workspaceId:string,userId:string,r
   return run(tx);
  });
 }
+export async function withUserContext<T>(userId:string,run:(tx:any)=>Promise<T>):Promise<T>{
+ if(!db)throw new Error("DATABASE_URL is not configured");
+ return db.transaction(async tx=>{
+  await tx.execute(sql`select set_config('app.user_id', ${userId}, true)`);
+  return run(tx);
+ });
+}
