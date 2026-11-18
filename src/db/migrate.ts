@@ -4,7 +4,7 @@ import pg from "pg";
 import {config} from "../config.js";
 if(!config.DATABASE_URL)throw new Error("DATABASE_URL is required to run migrations");
 const pool=new pg.Pool({connectionString:config.DATABASE_URL,ssl:config.isProduction?{rejectUnauthorized:true}:undefined});
-const migrations=["0000_initial_schema.sql","0001_tenant_security.sql","0002_contacts.sql"];
+const migrations=["0000_initial_schema.sql","0001_tenant_security.sql","0002_contacts.sql","0003_work_items.sql"];
 try{
  await pool.query("CREATE TABLE IF NOT EXISTS esekone_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())");
  for(const name of migrations){
