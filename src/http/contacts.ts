@@ -2,8 +2,8 @@ import {Router,type Request,type Response} from "express";
 import {and,desc,eq} from "drizzle-orm";
 import {z} from "zod";
 import {db} from "../db/client.js";
-import {contacts,memberships,users} from "../db/schema.js";
-import {withWorkspaceContext} from "../db/tenant.js";
+import {contacts,users} from "../db/schema.js";
+import {withWorkspaceContext,WorkspaceAccessDeniedError} from "../db/tenant.js";
 import {authenticateAuthorizationHeader,oidcConfigured} from "../auth/oidc.js";
 
 export const contactsRouter=Router();
@@ -27,15 +27,19 @@ async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string
  try{
   const [user]=await db.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1);
   if(!user)return res.status(403).json({error:"account_not_provisioned"});
-  const result=await withWorkspaceContext(workspaceId.data,user.id,async tx=>{
-   const [membership]=await tx.select({id:memberships.id,role:memberships.role}).from(memberships)
-    .where(and(eq(memberships.workspaceId,workspaceId.data),eq(memberships.userId,user.id),eq(memberships.status,"active"))).limit(1);
-   if(!membership)return null;
-   return action(tx,user.id,workspaceId.data);
-  });
-  if(result===null)return res.status(403).json({error:"workspace_access_denied"});
+
+  // This transaction proves active membership before establishing workspace
+  // RLS context. All subsequent contact reads and writes stay inside it.
+  const result=await withWorkspaceContext(
+   workspaceId.data,
+   user.id,
+   tx=>action(tx,user.id,workspaceId.data),
+  );
   return res.json(result);
  }catch(error){
+  if(error instanceof WorkspaceAccessDeniedError){
+   return res.status(403).json({error:error.code});
+  }
   const requestId=res.locals.requestId;
   console.error("Workspace request failed",requestId,error instanceof Error?error.message:"unknown");
   return res.status(500).json({error:"request_failed",requestId});
@@ -70,9 +74,6 @@ contactsRouter.patch("/:workspaceId/contacts/:contactId",async(req,res)=>{
    .where(and(eq(contacts.id,contactId.data),eq(contacts.workspaceId,workspace.data))).returning();
   if(!updated)return {notFound:true};
   return {contact:updated};
- }).then(result=>{
-  if(res.headersSent)return result;
-  return result;
  });
 });
 
