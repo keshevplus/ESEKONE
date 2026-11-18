@@ -27,8 +27,8 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 - [ ] **EKO-027 — Reporting and business intelligence** — `backlog`
 
 ## AI workforce
-- [ ] **EKO-030 — Agent runtime, tool registry and policy enforcement** — `in_progress` — Authenticated claim/complete API, queue locking, evidence-required non-final completion and UI request/history handoff exist; provider-backed worker loop, scoped tools, retries/timeouts and policy enforcement remain.
-- [ ] **EKO-031 — CRM, Task, Growth, Operations and Support agents** — `backlog`
+- [ ] **EKO-030 — Agent runtime, tool registry and policy enforcement** — `in_progress` — A standalone OpenAI Responses review worker, strict output schema, failure reporting, bounded retries and stale-lease recovery are implemented on this feature branch; provider credentials, persistent worker deployment, scoped business tools, approvals and true autonomous actions remain.
+- [ ] **EKO-031 — CRM, Task, Growth, Operations and Support agents** — `in_progress` — Specialist review guidance for admin, CRM, projects, operations, growth and support is wired into the review worker; tool-enabled execution and domain-specific agents remain.
 - [ ] **EKO-032 — Admin AI orchestrator and handoff protocol** — `backlog`
 - [ ] **EKO-033 — Evidence-based TODO status synchronization** — `backlog`
 - [ ] **EKO-034 — Approval gates for sensitive actions** — `backlog`

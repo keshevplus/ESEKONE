@@ -10,8 +10,13 @@ const schema=z.object({
  OIDC_ISSUER:z.string().url().optional(),
  OIDC_AUDIENCE:z.string().optional(),
  OIDC_JWKS_URL:z.string().url().optional(),
- AGENT_WORKER_TOKEN:z.string().min(32).optional()
+ AGENT_WORKER_TOKEN:z.string().min(32).optional(),
+ AGENT_WORKER_API_URL:z.string().url().optional(),
+ AGENT_WORKER_POLL_INTERVAL_MS:z.coerce.number().int().min(1000).max(60000).default(5000),
+ AGENT_WORKER_LEASE_TIMEOUT_MS:z.coerce.number().int().min(30000).max(3600000).default(600000),
+ OPENAI_API_KEY:z.string().min(20).optional(),
+ OPENAI_MODEL:z.string().trim().min(1).optional()
 });
 const parsed=schema.safeParse(process.env);
 if(!parsed.success)throw new Error('Invalid environment configuration: '+parsed.error.issues.map(i=>i.path.join('.')+': '+i.message).join('; '));
-export const config={...parsed.data,corsOrigins:parsed.data.CORS_ORIGINS.split(',').map(s=>s.trim()).filter(Boolean),isProduction:parsed.data.NODE_ENV==='production',agentWorkerConfigured:Boolean(parsed.data.AGENT_WORKER_TOKEN)};
+export const config={...parsed.data,corsOrigins:parsed.data.CORS_ORIGINS.split(',').map(s=>s.trim()).filter(Boolean),isProduction:parsed.data.NODE_ENV==='production',agentWorkerConfigured:Boolean(parsed.data.AGENT_WORKER_TOKEN),agentReviewConfigured:Boolean(parsed.data.OPENAI_API_KEY&&parsed.data.OPENAI_MODEL)};

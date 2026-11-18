@@ -110,3 +110,41 @@ Do not set database variables on `ESEKONE-web` or `ESEKONE-lp`. The browser must
 - Keep application traffic on the pooled endpoint and migrations/backups on the direct endpoint.
 - Do not use transaction-pooler connections for session-dependent operations such as `LISTEN/NOTIFY`, temp-table workflows or session-level `SET` state.
 - Keep Neon credentials in Vercel encrypted environment variables or a managed secret store; never commit `.env` files.
+
+## Separate AI review worker
+
+The review worker runs as a separate, persistent process. It does not connect directly to Neon and must not receive either database URL.
+
+Configure these server-side secrets/settings on the worker service:
+
+- `AGENT_WORKER_API_URL` — HTTPS base URL of the ESEKONE API (for local development, `http://localhost:4000`).
+- `AGENT_WORKER_TOKEN` — the same high-entropy internal token configured on the API; use separate values for dev and production.
+- `OPENAI_API_KEY` — server-side OpenAI project key.
+- `OPENAI_MODEL` — a model ID enabled for the OpenAI project.
+- `AGENT_WORKER_POLL_INTERVAL_MS` — optional, defaults to `5000`.
+- `AGENT_WORKER_LEASE_TIMEOUT_MS` — optional, defaults to `600000`; stale work is reclaimed up to its configured retry limit.
+
+Build the core package and run `npm run worker` in the worker service. Deploy it as a long-running worker/container, not as a Vercel serverless function. The API and worker must use the same `AGENT_WORKER_TOKEN`; never expose it to the web app.
+
+The current provider integration is **review-only**: it sends only the requested task prompt and task fields to the model and exposes no business-data or write tools. It produces a review/next action, never claims a task is complete, and never changes business records itself. The API records failed requests and reclaims abandoned worker leases after the configured timeout.
+
+Do not set `OPENAI_API_KEY` or `AGENT_WORKER_TOKEN` as any browser `VITE_*` value. Use protected worker-service secrets and rotate them independently.
+
+## Separate AI review worker
+
+The review worker runs as a separate, persistent process. It does not connect directly to Neon and must not receive either database URL.
+
+Configure these server-side secrets/settings on the worker service:
+
+- `AGENT_WORKER_API_URL` — HTTPS base URL of the ESEKONE API (for local development, `http://localhost:4000`).
+- `AGENT_WORKER_TOKEN` — the same high-entropy internal token configured on the API; use separate values for dev and production.
+- `OPENAI_API_KEY` — server-side OpenAI project key.
+- `OPENAI_MODEL` — a model ID enabled for the OpenAI project.
+- `AGENT_WORKER_POLL_INTERVAL_MS` — optional, defaults to `5000`.
+- `AGENT_WORKER_LEASE_TIMEOUT_MS` — optional, defaults to `600000`; stale work is reclaimed up to its configured retry limit.
+
+Build the core package and run `npm run worker` in the worker service. Deploy it as a long-running worker/container, not as a Vercel serverless function. The API and worker must use the same `AGENT_WORKER_TOKEN`; never expose it to the web app.
+
+The current provider integration is **review-only**: it sends only the requested task prompt and task fields to the model and exposes no business-data or write tools. It produces a review/next action, never claims a task is complete, and never changes business records itself. The API records failed requests and reclaims abandoned worker leases after the configured timeout.
+
+Do not set `OPENAI_API_KEY` or `AGENT_WORKER_TOKEN` as any browser `VITE_*` value. Use protected worker-service secrets and rotate them independently.
