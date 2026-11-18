@@ -5,9 +5,9 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 
 ## Foundation
 - [x] **EKO-001 — Establish independent platform architecture** — `done` — Modular-monolith boundaries, API runtime, three-repository responsibilities and release flow documented.
-- [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `in_progress` — Initial PostgreSQL schema and ordered SQL migrations are committed; provision a dedicated managed database and run migrations before integration.
-- [ ] **EKO-003 — Complete and verify tenant isolation** — `in_progress` — OIDC verification, membership checks and PostgreSQL RLS baseline are implemented; add cross-tenant denial and write-isolation integration tests.
-- [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Typecheck/build gates pass; CRM validation unit tests are being added, with integration and security checks still outstanding.
+- [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `blocked` — Runtime/migration connection separation, explicit ESEKONE host/database allowlisting, database identity checks and RLS-hardening migration are committed. A dedicated Neon project/connection is not yet connected; do not run migrations until the new project is ready (docs/DATABASE.md).
+- [ ] **EKO-003 — Complete and verify tenant isolation** — `in_progress` — OIDC verification, identity-scoped user lookup, active membership verification inside the same transaction, shared workspace context, FORCE RLS and database-target tests are implemented. Add live PostgreSQL cross-tenant read/write integration tests with a non-owner runtime role.
+- [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Existing GitHub CI typecheck, unit tests and build pass on dev. Added database-target and workspace-membership unit tests; next add an ephemeral PostgreSQL service to CI for RLS integration tests, plus lint and security scans.
 
 ## SaaS platform
 - [ ] **EKO-010 — Organization and workspace provisioning** — `backlog`
@@ -17,7 +17,7 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 - [ ] **EKO-014 — Audit events and administrator activity history** — `backlog`
 
 ## Business OS modules
-- [ ] **EKO-020 — Configurable CRM and customer records** — `in_progress` — First workspace-scoped contacts API and validation tests are implemented; expand to custom fields, timeline and imports.
+- [ ] **EKO-020 — Configurable CRM and customer records** — `in_progress` — First workspace-scoped contacts API and validation tests are implemented; expand to custom fields, timeline, imports and module-defined business-specific extensions.
 - [ ] **EKO-021 — Sales pipeline and revenue operations** — `backlog`
 - [ ] **EKO-022 — Universal tasks, projects and team workload** — `in_progress` — Workspace-scoped work items, lifecycle validation, event history and agent-request queue implemented; projects, workload views and worker execution remain.
 - [ ] **EKO-023 — Calendar, appointments and resource scheduling** — `backlog`
@@ -32,6 +32,10 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 - [ ] **EKO-032 — Admin AI orchestrator and handoff protocol** — `backlog`
 - [ ] **EKO-033 — Evidence-based TODO status synchronization** — `backlog`
 - [ ] **EKO-034 — Approval gates for sensitive actions** — `backlog`
+
+
+## Quality and agent operations
+- [ ] **EKO-035 — Core QA issues and fix-task lifecycle** — `ready` — Port the generic QA issue workflow as a core module: severity/environment/repo/reproduction/evidence, deduplicated linked fix task, agent sync, QA list/counters/filters, CI auto-filing, and open → being fixed → ready to verify → verified lifecycle. Failed retests reopen; completed fix tasks only set ready-to-verify.
 
 ## Experience and launch
 - [ ] **EKO-040 — ESEKONE design system and responsive workspace** — `in_progress`
