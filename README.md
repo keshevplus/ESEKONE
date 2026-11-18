@@ -12,10 +12,18 @@ ESEKONE is a modular Business Operating System delivered as a multi-tenant SaaS.
 - **International by design:** translation keys, locale-aware formatting, RTL/LTR layouts and accessible interfaces.
 - **Secure by default:** least privilege, secure sessions, encryption, auditability, tested recovery and continuous security checks.
 
-## Repository map
-- `ESEKONE` — platform services, admin console, APIs, data model, automation and AI orchestration.
-- `ESEKONE-web` — authenticated customer workspace application.
-- `ESEKONE-lp` — public product website and conversion journeys.
+## Repository architecture
+ESEKONE is a single maintainable modular monolith. The API, authenticated admin, public website renderer, templates, data migrations and AI/automation services live in this repository with explicit package boundaries. Do not create separate application forks or microservices until a measured operational need justifies it.
+
+Planned product areas:
+- `src/` — API, identity, workspace services, CRM, tasks, QA and agent orchestration.
+- `apps/admin/` — React + Vite workspace admin and first-run setup.
+- `apps/site/` — public business-site renderer and editable template catalog.
+- `packages/ui/` — shared responsive UI primitives and design tokens.
+- `modules/` — optional clinic, professional services, ecommerce, membership and gaming/community modules.
+- `migrations/` — ordered PostgreSQL migrations.
+- `docs/` — architecture, security and operations runbooks.
+
 
 ## Core domains
 Identity and access · Organizations and workspaces · Subscription and entitlements · CRM · Sales · Projects · Tasks · Calendar · Catalog and orders · Inventory · Documents · Communications · Workflow automation · Analytics · AI agents · Audit and security.
@@ -30,4 +38,4 @@ Identity and access · Organizations and workspaces · Subscription and entitlem
 - Feature branches do not trigger preview deployments by default. Integrate on `dev`, then promote a tested release to `main`.
 
 ## Status
-This repository is the clean foundation for the ESEKONE platform. See [the delivery backlog](TODO.md) and [architecture](docs/ARCHITECTURE.md).
+The API foundation now includes OIDC identity verification, first-workspace onboarding, workspace-scoped CRM contacts, tasks/projects, and an authenticated internal agent queue. Tenant isolation is being hardened with membership checks and forced PostgreSQL RLS. The separate ESEKONE managed database is not provisioned or connected yet. See [the delivery backlog](TODO.md), [architecture](docs/ARCHITECTURE.md), and [database isolation](docs/DATABASE.md).
