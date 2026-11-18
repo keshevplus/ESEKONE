@@ -39,7 +39,8 @@ export const allowedStatusTransitions:Record<string,string[]>={
 
 export function canTransitionWorkItem(from:string,to:string){return from===to||(allowedStatusTransitions[from]??[]).includes(to);}
 
-async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string,workspaceId:string)=>Promise<unknown>){
+export function canWriteRole(role:string){return ["owner","admin","manager","member"].includes(role);}
+async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string,workspaceId:string)=>Promise<unknown>,write=false){
  if(!oidcConfigured)return res.status(503).json({error:"identity_provider_not_configured"});
  if(!db)return res.status(503).json({error:"database_not_configured"});
  let identity;
@@ -54,9 +55,11 @@ async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string
    const [membership]=await tx.select({id:memberships.id,role:memberships.role}).from(memberships)
     .where(and(eq(memberships.workspaceId,workspaceId.data),eq(memberships.userId,user.id),eq(memberships.status,"active"))).limit(1);
    if(!membership)return null;
+   if(write&&!canWriteRole(membership.role))return {forbidden:true};
    return action(tx,user.id,workspaceId.data);
   });
   if(result===null)return res.status(403).json({error:"workspace_access_denied"});
+  if(result&&typeof result==="object"&&"forbidden" in result)return res.status(403).json({error:"insufficient_workspace_role"});
   if(result&&typeof result==="object"&&"notFound" in result)return res.status(404).json(result);
   if(result&&typeof result==="object"&&"conflict" in result)return res.status(409).json(result);
   return res.json(result);
@@ -90,7 +93,7 @@ tasksRouter.post("/:workspaceId/tasks",async(req,res)=>{
   const [item]=await tx.insert(workItems).values({workspaceId,createdByUserId:userId,...input.data,dueAt:input.data.dueAt?new Date(input.data.dueAt):null}).returning();
   await tx.insert(workItemEvents).values({workspaceId,workItemId:item.id,actorUserId:userId,eventType:"created",toStatus:item.status,detail:"Work item created"});
   return {item};
- });
+ },true);
 });
 
 tasksRouter.get("/:workspaceId/tasks/:taskId",async(req,res)=>{
@@ -122,7 +125,7 @@ tasksRouter.patch("/:workspaceId/tasks/:taskId",async(req,res)=>{
   if(input.data.status&&input.data.status!==current.status)
    await tx.insert(workItemEvents).values({workspaceId,workItemId:item.id,actorUserId:userId,eventType:"status_changed",fromStatus:current.status,toStatus:item.status,detail:"Status changed"});
   return {item};
- });
+ },true);
 });
 
 tasksRouter.post("/:workspaceId/tasks/:taskId/agent-requests",async(req,res)=>{
@@ -136,7 +139,7 @@ tasksRouter.post("/:workspaceId/tasks/:taskId/agent-requests",async(req,res)=>{
   const [request]=await tx.insert(agentRequests).values({workspaceId,workItemId:item.id,requestedByUserId:userId,agentKey:input.data.agentKey,prompt:input.data.prompt,status:"queued"}).returning();
   await tx.insert(workItemEvents).values({workspaceId,workItemId:item.id,actorUserId:userId,eventType:"agent_request_queued",detail:"Request "+request.id+" queued for "+request.agentKey});
   return {request:{id:request.id,status:request.status,agentKey:request.agentKey,createdAt:request.createdAt},message:"Request queued. An agent worker must claim it before work begins."};
- });
+ },true);
 });
 
 tasksRouter.get("/:workspaceId/tasks/:taskId/agent-requests",async(req,res)=>{

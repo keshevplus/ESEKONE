@@ -16,7 +16,8 @@ export const createContact=z.object({
 }).strict();
 export const updateContact=createContact.partial().refine(v=>Object.keys(v).length>0,"At least one field is required");
 
-async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string,workspaceId:string)=>Promise<unknown>){
+export function canWriteRole(role:string){return ["owner","admin","manager","member"].includes(role);}
+async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string,workspaceId:string)=>Promise<unknown>,write=false){
  if(!oidcConfigured)return res.status(503).json({error:"identity_provider_not_configured"});
  if(!db)return res.status(503).json({error:"database_not_configured"});
  let identity;
@@ -31,9 +32,11 @@ async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string
    const [membership]=await tx.select({id:memberships.id,role:memberships.role}).from(memberships)
     .where(and(eq(memberships.workspaceId,workspaceId.data),eq(memberships.userId,user.id),eq(memberships.status,"active"))).limit(1);
    if(!membership)return null;
+   if(write&&!canWriteRole(membership.role))return {forbidden:true};
    return action(tx,user.id,workspaceId.data);
   });
   if(result===null)return res.status(403).json({error:"workspace_access_denied"});
+  if(result&&typeof result==="object"&&"forbidden" in result)return res.status(403).json({error:"insufficient_workspace_role"});
   if(result&&typeof result==="object"&&"notFound" in result)return res.status(404).json(result);
   if(result&&typeof result==="object"&&"conflict" in result)return res.status(409).json(result);
   return res.json(result);
@@ -59,7 +62,7 @@ contactsRouter.post("/:workspaceId/contacts",async(req,res)=>{
  return inWorkspace(req,res,async tx=>{
   const [created]=await tx.insert(contacts).values({workspaceId:req.params.workspaceId,...input.data}).returning();
   return {contact:created};
- });
+ },true);
 });
 
 contactsRouter.patch("/:workspaceId/contacts/:contactId",async(req,res)=>{
@@ -84,5 +87,5 @@ contactsRouter.delete("/:workspaceId/contacts/:contactId",async(req,res)=>{
  return inWorkspace(req,res,async tx=>{
   const [deleted]=await tx.delete(contacts).where(and(eq(contacts.id,contactId.data),eq(contacts.workspaceId,workspace.data))).returning({id:contacts.id});
   return {deleted:Boolean(deleted)};
- });
+ },true);
 });

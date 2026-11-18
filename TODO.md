@@ -11,7 +11,7 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 
 ## SaaS platform
 - [ ] **EKO-010 — Organization and workspace provisioning** — `in_progress` — Verified-identity onboarding creates an organization, first workspace and owner membership; invitation and multi-workspace administration remain.
-- [ ] **EKO-011 — Identity, MFA, sessions and RBAC** — `backlog`
+- [ ] **EKO-011 — Identity, MFA, sessions and RBAC** — `in_progress` — OIDC identities require verified email claims; workspace mutations are denied to viewer/unknown roles. Invitations, MFA policy and session lifecycle remain.
 - [ ] **EKO-012 — Plans, subscriptions, billing and entitlements** — `backlog`
 - [ ] **EKO-013 — Usage metering and plan limits** — `backlog`
 - [ ] **EKO-014 — Audit events and administrator activity history** — `backlog`
