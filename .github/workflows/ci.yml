@@ -1,22 +1,81 @@
 name: Quality gates
+
 on:
   push:
     branches: [dev, main]
   pull_request:
     branches: [dev, main]
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: esekone
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d esekone"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      ESEKONE_DATABASE_HOST: localhost
+      ESEKONE_DATABASE_NAME: esekone
+      DATABASE_URL: postgresql://esekone_app:app-password@localhost:5432/esekone
+      DATABASE_MIGRATION_URL: postgresql://postgres:postgres@localhost:5432/esekone
+      RUN_DATABASE_INTEGRATION: "true"
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - run: npm install
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
+
+      - name: Create a restricted runtime database role
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_MIGRATION_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE esekone_app LOGIN PASSWORD 'app-password'
+            NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+          ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+            GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO esekone_app;
+          ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+            GRANT USAGE, SELECT ON SEQUENCES TO esekone_app;
+          SQL
+
+      - name: Apply isolated ESEKONE migrations with the migration role
+        run: npm run db:migrate
+
+      - name: Grant runtime table access (never RLS bypass)
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_MIGRATION_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          GRANT CONNECT ON DATABASE esekone TO esekone_app;
+          GRANT USAGE ON SCHEMA public TO esekone_app;
+          GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO esekone_app;
+          GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO esekone_app;
+          REVOKE ALL ON TABLE esekone_migrations FROM esekone_app;
+          SQL
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit and PostgreSQL RLS integration tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
