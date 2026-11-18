@@ -8,7 +8,7 @@ import { config } from './config.js';
 import { authenticateAuthorizationHeader,oidcConfigured } from './auth/oidc.js';
 import { db,checkDatabase } from './db/client.js';
 import { users,memberships,workspaces } from './db/schema.js';
-import { withUserContext } from './db/tenant.js';
+import { withUserContext, WorkspaceAccessDeniedError } from './db/tenant.js';
 
 const app=express();
 app.disable('x-powered-by');
@@ -40,6 +40,7 @@ app.get('/v1/me',async(req,res)=>{
 app.use((_req,res)=>res.status(404).json({error:'Not found',requestId:res.locals.requestId}));
 app.use((error:unknown,_req:express.Request,res:express.Response,_next:express.NextFunction)=>{
  const message=error instanceof Error?error.message:'Unexpected server error';
- if(!res.headersSent)res.status(400).json({error:config.isProduction?'Request could not be processed':message,requestId:res.locals.requestId});
+ const denied=error instanceof WorkspaceAccessDeniedError;
+ if(!res.headersSent)res.status(denied?403:400).json({error:denied?error.code:(config.isProduction?'Request could not be processed':message),requestId:res.locals.requestId});
 });
 app.listen(config.PORT,()=>process.stdout.write('ESEKONE platform listening on port '+config.PORT+'\\n'));

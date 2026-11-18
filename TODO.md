@@ -6,8 +6,8 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 ## Foundation
 - [ ] **EKO-001 — Establish independent platform architecture** — `in_progress` — Define service boundaries, runtime, environments and repository responsibilities.
 - [ ] **EKO-002 — Create clean ESEKONE database and migration baseline** — `ready` — No reused clinic schema, records, credentials or production database.
-- [ ] **EKO-003 — Define tenant isolation model** — `ready` — Server-side tenant scoping, isolation tests and cross-tenant denial tests.
-- [ ] **EKO-004 — Establish CI quality gates** — `ready` — Typecheck, lint, unit, integration and security checks.
+- [ ] **EKO-003 — Define tenant isolation model** — `in_progress` — Workspace context now verifies an active user membership inside the same transaction before setting the workspace RLS context; unit tests cover allow, deny, malformed identifiers and database error propagation. Database-backed cross-tenant integration tests are still required.
+- [ ] **EKO-004 — Establish CI quality gates** — `in_progress` — Typecheck, unit tests and production build run in CI. Lint, integration and security scans remain to be added.
 
 ## SaaS platform
 - [ ] **EKO-010 — Organization and workspace provisioning** — `backlog`
