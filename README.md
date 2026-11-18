@@ -24,7 +24,16 @@ Identity and access · Organizations and workspaces · Subscription and entitlem
 - `DATABASE_MIGRATION_URL` uses a separate schema-owner role for ordered migrations.
 - `DATABASE_URL` uses a separate runtime role named by `DATABASE_APP_ROLE`.
 - The runtime role can only read its own verified identity row and must not own application tables, be a superuser, or have `BYPASSRLS`; migrations grant it only data access and force row-level security on tenant tables.
-- Create the runtime role before running migrations. Never use the Neon owner connection string as the application runtime URL.
+- Create the runtime role before running migrations. Never use a schema-owner connection string as the application runtime URL.
+
+## Current API surface
+- `GET /v1/me` — authenticated identity and workspace memberships.
+- `POST /v1/onboarding/workspaces` — create an organization and its first owner workspace.
+- `GET /v1/workspaces/:workspaceId/overview` — tenant-scoped live counts and recent contacts/tasks.
+- `/v1/workspaces/:workspaceId/contacts` — tenant-scoped contact CRUD.
+- `/v1/workspaces/:workspaceId/projects` — tenant-scoped project CRUD.
+- `/v1/workspaces/:workspaceId/tasks` — tenant-scoped task lifecycle, events and agent handoffs.
+- `/internal/agent-requests` — separately token-authenticated worker claim/completion contract.
 
 ## Engineering
 - Keep production data and credentials out of source control.
@@ -36,4 +45,4 @@ Identity and access · Organizations and workspaces · Subscription and entitlem
 - Feature branches do not trigger preview deployments by default. Integrate on `dev`, then promote a tested release to `main`.
 
 ## Status
-This repository is the clean foundation for the ESEKONE platform. See [the delivery backlog](TODO.md) and [architecture](docs/ARCHITECTURE.md).
+This repository is the clean foundation for the ESEKONE platform. See [the delivery backlog](TODO.md), [release gates](docs/RELEASE_GATES.md) and [architecture](docs/ARCHITECTURE.md).
