@@ -83,7 +83,6 @@ jobs:
         if: always()
         env:
           TARGET_BRANCH: ${{ inputs.target_branch }}
-          TARGET_SHA: ${{ github.sha }}
           INSTALL_RESULT: ${{ steps.install.outcome }}
           DEPENDENCY_RESULT: ${{ steps.dependency_audit.outcome }}
           TYPECHECK_RESULT: ${{ steps.typecheck.outcome }}
@@ -91,6 +90,7 @@ jobs:
           BUILD_RESULT: ${{ steps.build.outcome }}
           CODEQL_RESULT: ${{ steps.codeql.outcome }}
         run: |
+          TARGET_SHA="$(git rev-parse HEAD)"
           {
             echo "# ESEKONE automated code audit"
             echo
