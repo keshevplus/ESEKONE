@@ -10,7 +10,7 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 - [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Typecheck/build gates pass; CRM validation unit tests are being added, with integration and security checks still outstanding.
 
 ## SaaS platform
-- [ ] **EKO-010 — Organization and workspace provisioning** — `backlog`
+- [ ] **EKO-010 — Organization and workspace provisioning** — `in_progress` — Verified-identity onboarding creates an organization, first workspace and owner membership; invitation and multi-workspace administration remain.
 - [ ] **EKO-011 — Identity, MFA, sessions and RBAC** — `backlog`
 - [ ] **EKO-012 — Plans, subscriptions, billing and entitlements** — `backlog`
 - [ ] **EKO-013 — Usage metering and plan limits** — `backlog`

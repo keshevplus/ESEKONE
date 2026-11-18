@@ -12,7 +12,7 @@ export async function authenticateAuthorizationHeader(header?:string):Promise<Au
  if(!token)return null;
  const {payload}=await jwtVerify(token,jwks,{issuer,audience});
  const claims=payload as JWTPayload&{email?:string;name?:string};
- if(typeof claims.sub!=="string"||typeof claims.email!=="string")return null;
+ if(typeof claims.sub!=="string"||typeof claims.email!=="string"||claims.email_verified!==true)return null;
  return {subject:claims.sub,email:claims.email,name:claims.name};
 }
 export const oidcConfigured=configured;
