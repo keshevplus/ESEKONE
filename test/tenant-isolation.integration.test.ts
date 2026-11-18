@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import pg from "pg";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../src/db/client.js";
 import { agentRequests, contacts, users, workItems } from "../src/db/schema.js";
 import {
@@ -32,7 +32,7 @@ test("PostgreSQL RLS blocks cross-workspace reads and writes", { skip: !enabled 
 
   try {
     const runtime = await db.execute(
-      "SELECT current_user AS role_name, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user",
+      sql`SELECT current_user AS role_name, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user`,
     );
     assert.equal(runtime.rows[0]?.rolsuper, false, "runtime role must not be superuser");
     assert.equal(runtime.rows[0]?.rolbypassrls, false, "runtime role must not bypass RLS");
