@@ -47,3 +47,36 @@ export const contacts=pgTable("contacts",{
  index("contacts_workspace_created_idx").on(t.workspaceId,t.createdAt),
  index("contacts_workspace_email_idx").on(t.workspaceId,t.email)
 ]);
+
+export const workItems=pgTable("work_items",{
+ id:uuid("id").defaultRandom().primaryKey(),
+ workspaceId:uuid("workspace_id").notNull().references(()=>workspaces.id,{onDelete:"cascade"}),
+ title:text("title").notNull(),description:text("description"),
+ status:text("status").notNull().default("backlog"),priority:text("priority").notNull().default("normal"),
+ dueAt:timestamp("due_at",{withTimezone:true}),
+ assignedUserId:uuid("assigned_user_id").references(()=>users.id,{onDelete:"set null"}),
+ assignedAgent:text("assigned_agent"),acceptanceCriteria:text("acceptance_criteria"),
+ latestEvidence:text("latest_evidence"),nextAction:text("next_action"),
+ createdByUserId:uuid("created_by_user_id").references(()=>users.id,{onDelete:"set null"}),
+ createdAt:createdAt(),updatedAt:updatedAt()
+},t=>[
+ index("work_items_workspace_status_idx").on(t.workspaceId,t.status,t.updatedAt),
+ index("work_items_workspace_assignee_idx").on(t.workspaceId,t.assignedUserId,t.status)
+]);
+export const workItemEvents=pgTable("work_item_events",{
+ id:uuid("id").defaultRandom().primaryKey(),
+ workspaceId:uuid("workspace_id").notNull().references(()=>workspaces.id,{onDelete:"cascade"}),
+ workItemId:uuid("work_item_id").notNull().references(()=>workItems.id,{onDelete:"cascade"}),
+ actorUserId:uuid("actor_user_id").references(()=>users.id,{onDelete:"set null"}),
+ eventType:text("event_type").notNull(),fromStatus:text("from_status"),toStatus:text("to_status"),
+ detail:text("detail"),createdAt:createdAt()
+},t=>[index("work_item_events_item_created_idx").on(t.workItemId,t.createdAt)]);
+export const agentRequests=pgTable("agent_requests",{
+ id:uuid("id").defaultRandom().primaryKey(),
+ workspaceId:uuid("workspace_id").notNull().references(()=>workspaces.id,{onDelete:"cascade"}),
+ workItemId:uuid("work_item_id").notNull().references(()=>workItems.id,{onDelete:"cascade"}),
+ requestedByUserId:uuid("requested_by_user_id").references(()=>users.id,{onDelete:"set null"}),
+ agentKey:text("agent_key").notNull().default("admin"),prompt:text("prompt").notNull(),
+ status:text("status").notNull().default("queued"),resultSummary:text("result_summary"),
+ createdAt:createdAt(),startedAt:timestamp("started_at",{withTimezone:true}),completedAt:timestamp("completed_at",{withTimezone:true})
+},t=>[index("agent_requests_queue_idx").on(t.status,t.createdAt),index("agent_requests_workspace_idx").on(t.workspaceId,t.createdAt)]);
