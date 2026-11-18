@@ -31,3 +31,9 @@ test("rejects localhost as a production database target", () => {
     /dedicated managed database/,
   );
 });
+test("rejects non-PostgreSQL URL schemes", () => {
+  assert.throws(
+    () => parseEsekoneDatabaseTarget(`https://${host}/esekone`, host, "esekone", "development"),
+    /must use PostgreSQL/,
+  );
+});
