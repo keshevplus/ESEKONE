@@ -9,6 +9,7 @@ import { authenticateAuthorizationHeader,oidcConfigured } from './auth/oidc.js';
 import { db,checkDatabase } from './db/client.js';
 import { users,memberships,workspaces } from './db/schema.js';
 import { withUserContext } from './db/tenant.js';
+import { contactsRouter } from './http/contacts.js';
 
 const app=express();
 app.disable('x-powered-by');
@@ -22,6 +23,8 @@ app.use(rateLimit({windowMs:60000,limit:config.isProduction?120:600,standardHead
 
 app.get('/health/live',(_req,res)=>res.status(200).json({status:'ok',service:'esekone-platform',timestamp:new Date().toISOString()}));
 app.get('/health/ready',async(_req,res)=>{try{await checkDatabase();return res.status(200).json({status:'ready',database:'connected'});}catch{return res.status(503).json({status:'not_ready',database:'unavailable'});}});
+
+app.use('/v1/workspaces',contactsRouter);
 
 app.get('/v1/me',async(req,res)=>{
  if(!oidcConfigured)return res.status(503).json({error:'identity_provider_not_configured'});
