@@ -14,6 +14,7 @@ import { tasksRouter } from './http/tasks.js';
 import { onboardingRouter } from './http/onboarding.js';
 import { agentWorkerRouter } from './http/agent-worker.js';
 import { projectsRouter } from './http/projects.js';
+import { overviewRouter } from './http/overview.js';
 
 const app=express();
 app.disable('x-powered-by');
@@ -33,6 +34,7 @@ app.use('/v1/onboarding',onboardingRouter);
 app.use('/v1/workspaces',contactsRouter);
 app.use('/v1/workspaces',tasksRouter);
 app.use('/v1/workspaces',projectsRouter);
+app.use('/v1/workspaces',overviewRouter);
 
 app.get('/v1/me',async(req,res)=>{
  if(!oidcConfigured)return res.status(503).json({error:'identity_provider_not_configured'});

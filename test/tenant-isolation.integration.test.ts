@@ -73,6 +73,16 @@ test("PostgreSQL RLS isolates workspace onboarding and contacts across tenants",
   assert.equal(crossTenantRead.status,403);
   const crossTenantWrite=await request("/v1/workspaces/"+a.workspace.id+"/contacts",tokenB,"POST",{fullName:"Intruder"});
   assert.equal(crossTenantWrite.status,403);
+  const createTask=await request("/v1/workspaces/"+a.workspace.id+"/tasks",tokenA,"POST",{title:"Integration task"});
+  assert.equal(createTask.status,200,await createTask.clone().text());
+  const createProject=await request("/v1/workspaces/"+a.workspace.id+"/projects",tokenA,"POST",{name:"Integration project",status:"active"});
+  assert.equal(createProject.status,200,await createProject.clone().text());
+  const overview=await request("/v1/workspaces/"+a.workspace.id+"/overview",tokenA);
+  assert.equal(overview.status,200,await overview.clone().text());
+  const overviewBody=await overview.json() as {metrics:{contactsTotal:number;customersTotal:number;projectsTotal:number;activeProjects:number;openTasks:number}};
+  assert.deepEqual(overviewBody.metrics,{contactsTotal:1,customersTotal:0,projectsTotal:1,activeProjects:1,openTasks:1,tasksDueToday:0});
+  const crossTenantOverview=await request("/v1/workspaces/"+a.workspace.id+"/overview",tokenB);
+  assert.equal(crossTenantOverview.status,403);
   const isolatedB=await request("/v1/workspaces/"+b.workspace.id+"/contacts",tokenB);
   assert.equal(isolatedB.status,200);
   const isolatedBody=await isolatedB.json() as {items:Array<unknown>};
