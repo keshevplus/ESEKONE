@@ -17,14 +17,27 @@ A change is eligible for `dev` only when:
 
 After merge, verify the resulting `dev` SHA and its post-merge CI run. Deploy `dev` only when the deployment environment is intentionally configured for integration testing.
 
+## Neon environment model
+
+Neon is the selected managed PostgreSQL provider. Use separate Neon branches for ESEKONE `dev` and `production`; do not share live production customer data with development.
+
+For each branch:
+- API requests use `DATABASE_URL` with the Neon pooled endpoint and the restricted `esekone_app` role.
+- Schema migrations use `DATABASE_MIGRATION_URL` with the direct (unpooled) endpoint and the separate `esekone_migrator` role.
+- `DATABASE_APP_ROLE` must match the role used by `DATABASE_URL`.
+- Both endpoints must target the same database and branch within that environment.
+- Keep TLS enabled and store both connection strings only in protected server-side secrets.
+
+Provisioning steps, role SQL and verification queries are in [NEON_SETUP.md](NEON_SETUP.md).
+
 ## Safe to promote into main
 
 A green PR is necessary but not sufficient. Promote only when all three ESEKONE `dev` branches are validated and:
-1. A dedicated ESEKONE managed PostgreSQL database exists and all ordered migrations have run successfully.
-2. The application database role is separate from the migration owner, does not own tables, is not superuser and has no `BYPASSRLS`.
+1. Dedicated Neon `dev` and `production` branches exist, with separate credentials and successfully applied ordered migrations.
+2. The runtime database role is separate from the migration owner, does not own tables, is not superuser and has no `BYPASSRLS`.
 3. OIDC issuer, audience, JWKS and verified-email claims are configured; the web client has matching authority, client ID and registered callback/logout URLs.
 4. API CORS origins, Vercel environment variables, domains and health checks are configured for the intended environments.
-5. Real end-to-end tests pass for sign-in, onboarding, workspace membership, tenant isolation, contacts, projects, tasks and agent-worker authorization.
+5. Real end-to-end tests pass for sign-in, onboarding, workspace membership, tenant isolation, contacts, projects, tasks and agent-worker authorization against Neon.
 6. Backup and restore procedures have been tested; production monitoring and rollback are ready.
 7. All three `dev` commits are the exact release candidates being promoted. Use PRs to promote them; do not push directly to `main`.
 
@@ -41,5 +54,6 @@ After promotion, verify production health and confirm `dev` and `main` point to 
 ## Current verified state
 
 - Core CI includes a PostgreSQL 16 service, schema-owner migrations, a restricted runtime role, and authenticated cross-tenant isolation tests.
-- The web workspace has a generic OIDC sign-in bootstrap and API identity lookup; environment values and provider registration are still required.
+- Neon has been selected, but no Neon project/branch provisioning or live Neon connection test has yet been verified.
+- The web workspace has an OIDC sign-in bootstrap and live overview API integration; environment values and identity-provider registration are still required.
 - A passing CI run does not imply that managed database, OIDC, Vercel deployment, production-domain or backup setup has been completed.

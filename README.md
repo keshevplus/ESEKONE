@@ -13,7 +13,7 @@ ESEKONE is a modular Business Operating System delivered as a multi-tenant SaaS.
 - **Secure by default:** least privilege, secure sessions, encryption, auditability, tested recovery and continuous security checks.
 
 ## Repository map
-- `ESEKONE` — platform services, admin console, APIs, data model, automation and AI orchestration.
+- `ESEKONE` — platform services, APIs, data model, automation and AI orchestration.
 - `ESEKONE-web` — authenticated customer workspace application.
 - `ESEKONE-lp` — public product website and conversion journeys.
 
@@ -21,10 +21,14 @@ ESEKONE is a modular Business Operating System delivered as a multi-tenant SaaS.
 Identity and access · Organizations and workspaces · Subscription and entitlements · CRM · Sales · Projects · Tasks · Calendar · Catalog and orders · Inventory · Documents · Communications · Workflow automation · Analytics · AI agents · Audit and security.
 
 ## Database roles
-- `DATABASE_MIGRATION_URL` uses a separate schema-owner role for ordered migrations.
-- `DATABASE_URL` uses a separate runtime role named by `DATABASE_APP_ROLE`.
-- The runtime role can only read its own verified identity row and must not own application tables, be a superuser, or have `BYPASSRLS`; migrations grant it only data access and force row-level security on tenant tables.
-- Create the runtime role before running migrations. Never use a schema-owner connection string as the application runtime URL.
+ESEKONE uses Neon managed PostgreSQL:
+- `DATABASE_URL` connects to the Neon **pooled** endpoint using the restricted `esekone_app` role.
+- `DATABASE_MIGRATION_URL` connects to the Neon **direct** endpoint using the separate `esekone_migrator` role.
+- `DATABASE_APP_ROLE=esekone_app` lets the migration runner verify the runtime identity.
+- Development and production must use separate Neon branches and distinct credentials.
+- The runtime role must not own application tables, be a superuser, or have `BYPASSRLS`; migrations force row-level security on tenant tables.
+
+See [Neon provisioning and operations](docs/NEON_SETUP.md) before configuring an environment. Never commit connection strings or credentials.
 
 ## Current API surface
 - `GET /v1/me` — authenticated identity and workspace memberships.
@@ -37,7 +41,7 @@ Identity and access · Organizations and workspaces · Subscription and entitlem
 
 ## Engineering
 - Keep production data and credentials out of source control.
-- Use a separate database and migration history for ESEKONE.
+- Use separate Neon branches and role credentials for dev and production.
 - Enforce tenant scope server-side on every read and write.
 - Treat client-provided tenant IDs as untrusted.
 - Never let an agent bypass authorization or approval policies.
@@ -45,4 +49,4 @@ Identity and access · Organizations and workspaces · Subscription and entitlem
 - Feature branches do not trigger preview deployments by default. Integrate on `dev`, then promote a tested release to `main`.
 
 ## Status
-This repository is the clean foundation for the ESEKONE platform. See [the delivery backlog](TODO.md), [release gates](docs/RELEASE_GATES.md) and [architecture](docs/ARCHITECTURE.md).
+This repository is the platform foundation. Several business modules and runtime integrations are still in progress. See [the delivery backlog](TODO.md), [release gates](docs/RELEASE_GATES.md), [Neon setup](docs/NEON_SETUP.md) and [architecture](docs/ARCHITECTURE.md).
