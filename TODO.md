@@ -4,10 +4,10 @@ Statuses: `backlog`, `ready`, `in_progress`, `blocked`, `review`, `testing`, `do
 A task is only `done` when implementation evidence and passing relevant tests are recorded. Failed checks return it to `in_progress` or `blocked`.
 
 ## Foundation
-- [x] **EKO-001 — Establish independent platform architecture** — `done` — Modular-monolith boundaries, API runtime, three-repository responsibilities and release flow documented.
-- [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `in_progress` — Initial PostgreSQL schema and ordered SQL migrations are committed; provision a dedicated managed database and run migrations before integration.
-- [ ] **EKO-003 — Complete and verify tenant isolation** — `in_progress` — OIDC verification, membership checks and PostgreSQL RLS baseline are implemented; add cross-tenant denial and write-isolation integration tests.
-- [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Typecheck/build gates pass; CRM validation unit tests are being added, with integration and security checks still outstanding.
+- [x] **EKO-001 — Establish independent platform architecture** — `done` — Modular-monolith boundaries, API runtime, unified-repository responsibilities and release flow documented.
+- [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `blocked` — Runtime/migration credentials are separated, database host/name are allowlisted, and migrations verify the connected database. A dedicated Neon project and connection strings are not yet connected; do not run migrations until provisioned (docs/DATABASE.md).
+- [ ] **EKO-003 — Complete and verify tenant isolation** — `in_progress` — Verified-identity user lookup, active membership validation in the same transaction before setting workspace context, FORCE RLS, bootstrap policy and isolated worker context are implemented. PostgreSQL integration tests now prove tenant read/write isolation under a non-owner runtime role.
+- [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — CI now provisions an ephemeral PostgreSQL database, creates a non-superuser runtime role, migrates with a separate role, and runs unit plus tenant RLS integration tests before build.
 
 ## SaaS platform
 - [ ] **EKO-010 — Organization and workspace provisioning** — `in_progress` — Verified-identity onboarding creates an organization, first workspace and owner membership; invitation and multi-workspace administration remain.
@@ -32,6 +32,10 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 - [ ] **EKO-032 — Admin AI orchestrator and handoff protocol** — `backlog`
 - [ ] **EKO-033 — Evidence-based TODO status synchronization** — `backlog`
 - [ ] **EKO-034 — Approval gates for sensitive actions** — `backlog`
+
+
+## Quality and agent operations
+- [ ] **EKO-035 — Core QA issues and fix-task lifecycle** — `ready` — Add QA as a core issue type with severity/environment/repo/steps/expected/actual/evidence/reporter, event history, linked fix task and deduplicated handoff to the owning module queue. Lifecycle: open → being fixed → ready to verify → verified; failed retest reopens the same issue; fix completion never verifies it. Include agent sync, QA board/counters/filters and optional deduplicated CI auto-filing.
 
 ## Experience and launch
 - [ ] **EKO-040 — ESEKONE design system and responsive workspace** — `in_progress`
