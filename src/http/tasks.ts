@@ -1,8 +1,8 @@
-import {Router,type Request,type Response} from "express";
+import {Router} from "express";
 import {and,desc,eq} from "drizzle-orm";
 import {z} from "zod";
 import {agentRequests,memberships,projects,workItemEvents,workItems} from "../db/schema.js";
-import {withAuthorizedWorkspace,canWriteRole} from "./workspace-context.js";
+import {withAuthorizedWorkspace} from "./workspace-context.js";
 
 export const tasksRouter=Router();
 const statuses=["backlog","ready","in_progress","blocked","review","testing","done"] as const;

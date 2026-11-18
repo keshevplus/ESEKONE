@@ -1,4 +1,4 @@
-import {Router,type Request,type Response} from "express";
+import {Router} from "express";
 import {and,desc,eq} from "drizzle-orm";
 import {z} from "zod";
 import {contacts} from "../db/schema.js";
