@@ -5,7 +5,7 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 
 ## Foundation
 - [x] **EKO-001 — Establish independent platform architecture** — `done` — Modular-monolith boundaries, API runtime, three-repository responsibilities and release flow documented.
-- [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `in_progress` — Neon selected. Neon-specific setup guide and role model are documented; actual Neon project/branches, protected credentials, migrations and live connection validation remain.
+- [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `in_progress` — Vercel Marketplace Neon resource is active and linked to the `esekone` API project in `iad1`; Preview and Production environment variables are injected. Restricted runtime/migration roles, branch-isolation verification, protected role-specific URLs, ordered migrations and live connection tests remain.
 - [ ] **EKO-003 — Complete and verify tenant isolation** — `in_progress` — OIDC verification, membership checks, forced PostgreSQL RLS and cross-tenant read/write denial tests are implemented in CI; validate the same controls against the provisioned Neon production database.
 - [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Typecheck, production build, unit tests, PostgreSQL migrations and cross-tenant RLS integration tests run in CI; live Neon validation and broader security checks remain.
 
