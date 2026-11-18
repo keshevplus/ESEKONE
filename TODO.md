@@ -10,8 +10,8 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 - [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Typecheck/build gates pass; CRM validation unit tests are being added, with integration and security checks still outstanding.
 
 ## SaaS platform
-- [ ] **EKO-010 — Organization and workspace provisioning** — `backlog`
-- [ ] **EKO-011 — Identity, MFA, sessions and RBAC** — `backlog`
+- [ ] **EKO-010 — Organization and workspace provisioning** — `in_progress` — Verified-identity onboarding creates an organization, first workspace and owner membership; invitation and multi-workspace administration remain.
+- [ ] **EKO-011 — Identity, MFA, sessions and RBAC** — `in_progress` — OIDC identities require verified email claims; workspace mutations are denied to viewer/unknown roles. Invitations, MFA policy and session lifecycle remain.
 - [ ] **EKO-012 — Plans, subscriptions, billing and entitlements** — `backlog`
 - [ ] **EKO-013 — Usage metering and plan limits** — `backlog`
 - [ ] **EKO-014 — Audit events and administrator activity history** — `backlog`
@@ -19,7 +19,7 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 ## Business OS modules
 - [ ] **EKO-020 — Configurable CRM and customer records** — `in_progress` — First workspace-scoped contacts API and validation tests are implemented; expand to custom fields, timeline and imports.
 - [ ] **EKO-021 — Sales pipeline and revenue operations** — `backlog`
-- [ ] **EKO-022 — Universal tasks, projects and team workload** — `backlog`
+- [ ] **EKO-022 — Universal tasks, projects and team workload** — `in_progress` — Workspace-scoped work items, lifecycle validation, event history and agent-request queue implemented; projects, workload views and worker execution remain.
 - [ ] **EKO-023 — Calendar, appointments and resource scheduling** — `backlog`
 - [ ] **EKO-024 — Products, orders and inventory** — `backlog`
 - [ ] **EKO-025 — Documents, communications and integrations** — `backlog`
