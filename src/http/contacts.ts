@@ -3,7 +3,7 @@ import {and,desc,eq} from "drizzle-orm";
 import {z} from "zod";
 import {db} from "../db/client.js";
 import {contacts,users} from "../db/schema.js";
-import {withWorkspaceContext, WorkspaceAccessDeniedError} from "../db/tenant.js";
+import {withIdentityContext,withWorkspaceContext, WorkspaceAccessDeniedError} from "../db/tenant.js";
 import {authenticateAuthorizationHeader,oidcConfigured} from "../auth/oidc.js";
 
 export const contactsRouter=Router();
@@ -25,7 +25,7 @@ async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string
  const workspaceId=z.string().uuid().safeParse(req.params.workspaceId);
  if(!workspaceId.success)return res.status(400).json({error:"invalid_workspace_id"});
  try{
-  const [user]=await db.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1);
+  const [user]=await withIdentityContext(identity.subject,tx=>tx.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1));
   if(!user)return res.status(403).json({error:"account_not_provisioned"});
   const result=await withWorkspaceContext(workspaceId.data,user.id,tx=>action(tx,user.id,workspaceId.data));
   if(result&&typeof result==="object"&&"notFound" in result)return res.status(404).json(result);
