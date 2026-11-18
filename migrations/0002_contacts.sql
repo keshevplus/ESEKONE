@@ -5,7 +5,7 @@ CREATE TABLE contacts (
  email text,
  phone text,
  company text,
- status text NOT NULL DEFAULT 'lead',
+ status text NOT NULL DEFAULT 'lead' CHECK (status IN ('lead','customer','inactive')),
  created_at timestamptz NOT NULL DEFAULT now(),
  updated_at timestamptz NOT NULL DEFAULT now()
 );

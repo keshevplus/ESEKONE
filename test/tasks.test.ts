@@ -38,3 +38,8 @@ test("work item lifecycle only permits explicit forward and reopen transitions",
  assert.equal(canTransitionWorkItem("backlog","done"),false);
  assert.equal(canTransitionWorkItem("done","blocked"),false);
 });
+
+test("new work items cannot be created in review, testing or done states",()=>{
+ assert.equal(createWorkItem.safeParse({title:"Task",status:"done"}).success,false);
+ assert.equal(createWorkItem.safeParse({title:"Task",status:"ready"}).success,true);
+});

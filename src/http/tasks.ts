@@ -9,7 +9,7 @@ import {authenticateAuthorizationHeader,oidcConfigured} from "../auth/oidc.js";
 export const tasksRouter=Router();
 const statuses=["backlog","ready","in_progress","blocked","review","testing","done"] as const;
 const priorities=["low","normal","high","urgent"] as const;
-export const createWorkItem=z.object({
+const workItemFields={
  title:z.string().trim().min(1).max(200),
  description:z.string().trim().max(10000).nullable().optional(),
  status:z.enum(statuses).default("backlog"),
@@ -20,8 +20,9 @@ export const createWorkItem=z.object({
  acceptanceCriteria:z.string().trim().max(10000).nullable().optional(),
  latestEvidence:z.string().trim().max(12000).nullable().optional(),
  nextAction:z.string().trim().max(2000).nullable().optional()
-}).strict();
-export const updateWorkItem=createWorkItem.partial().refine(v=>Object.keys(v).length>0,"At least one field is required");
+};
+export const createWorkItem=z.object({...workItemFields,status:z.enum(["backlog","ready"]).default("backlog")}).strict();
+export const updateWorkItem=z.object({...workItemFields,status:z.enum(statuses).optional()}).partial().strict().refine(v=>Object.keys(v).length>0,"At least one field is required");
 export const createAgentRequest=z.object({
  prompt:z.string().trim().min(8).max(12000),
  agentKey:z.string().trim().min(1).max(80).default("admin")
