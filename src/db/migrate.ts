@@ -4,7 +4,7 @@ import pg from "pg";
 import {config} from "../config.js";
 if(!config.DATABASE_URL)throw new Error("DATABASE_URL is required to run migrations");
 const pool=new pg.Pool({connectionString:config.DATABASE_URL,ssl:config.isProduction?{rejectUnauthorized:true}:undefined});
-const migrations=["0000_initial_schema.sql","0001_tenant_security.sql","0002_contacts.sql","0003_work_items.sql","0004_workspace_bootstrap.sql"];
+const migrations=["0000_initial_schema.sql","0001_tenant_security.sql","0002_contacts.sql","0003_work_items.sql","0004_workspace_bootstrap.sql","0005_agent_worker_access.sql"];
 const client=await pool.connect();
 try{
  await client.query("SELECT pg_advisory_lock(hashtext('esekone_migrations'))");

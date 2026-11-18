@@ -26,3 +26,12 @@ export async function withBootstrapContext<T>(userId:string,run:(tx:any)=>Promis
   return run(tx);
  });
 }
+
+/** Global task-queue access is available only to the separately authenticated worker routes. */
+export async function withAgentWorkerContext<T>(run:(tx:any)=>Promise<T>):Promise<T>{
+ if(!db)throw new Error("DATABASE_URL is not configured");
+ return db.transaction(async tx=>{
+  await tx.execute(sql`select set_config('app.agent_worker', 'true', true)`);
+  return run(tx);
+ });
+}

@@ -12,6 +12,7 @@ import { withUserContext } from './db/tenant.js';
 import { contactsRouter } from './http/contacts.js';
 import { tasksRouter } from './http/tasks.js';
 import { onboardingRouter } from './http/onboarding.js';
+import { agentWorkerRouter } from './http/agent-worker.js';
 
 const app=express();
 app.disable('x-powered-by');
@@ -26,6 +27,7 @@ app.use(rateLimit({windowMs:60000,limit:config.isProduction?120:600,standardHead
 app.get('/health/live',(_req,res)=>res.status(200).json({status:'ok',service:'esekone-platform',timestamp:new Date().toISOString()}));
 app.get('/health/ready',async(_req,res)=>{try{await checkDatabase();return res.status(200).json({status:'ready',database:'connected'});}catch{return res.status(503).json({status:'not_ready',database:'unavailable'});}});
 
+app.use('/internal/agent-requests',agentWorkerRouter);
 app.use('/v1/onboarding',onboardingRouter);
 app.use('/v1/workspaces',contactsRouter);
 app.use('/v1/workspaces',tasksRouter);
@@ -49,4 +51,5 @@ app.use((error:unknown,_req:express.Request,res:express.Response,_next:express.N
  const message=error instanceof Error?error.message:'Unexpected server error';
  if(!res.headersSent)res.status(400).json({error:config.isProduction?'Request could not be processed':message,requestId:res.locals.requestId});
 });
-app.listen(config.PORT,()=>process.stdout.write('ESEKONE platform listening on port '+config.PORT+'\\n'));
+if(!process.env.VERCEL)app.listen(config.PORT,()=>process.stdout.write('ESEKONE platform listening on port '+config.PORT+'\\n'));
+export default app;
