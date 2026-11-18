@@ -24,7 +24,7 @@ export const createAgentRequest=z.object({
  prompt:z.string().trim().min(8).max(12000),
  agentKey:z.string().trim().min(1).max(80).default("admin")
 }).strict();
-const transitions:Record<string,string[]>={
+export const allowedStatusTransitions:Record<string,string[]>={
  backlog:["ready","in_progress","blocked"],
  ready:["in_progress","blocked"],
  in_progress:["blocked","review","testing"],
@@ -52,6 +52,8 @@ async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string
    return action(tx,user.id,workspaceId.data);
   });
   if(result===null)return res.status(403).json({error:"workspace_access_denied"});
+  if(result&&typeof result==="object"&&"notFound" in result)return res.status(404).json(result);
+  if(result&&typeof result==="object"&&"conflict" in result)return res.status(409).json(result);
   return res.json(result);
  }catch(error){
   const requestId=res.locals.requestId;
@@ -76,6 +78,10 @@ tasksRouter.post("/:workspaceId/tasks",async(req,res)=>{
  const input=createWorkItem.safeParse(req.body);
  if(!input.success)return res.status(400).json({error:"invalid_task",details:input.error.flatten()});
  return inWorkspace(req,res,async(tx,userId,workspaceId)=>{
+  if(input.data.assignedUserId){
+   const [assignee]=await tx.select({id:memberships.id}).from(memberships).where(and(eq(memberships.workspaceId,workspaceId),eq(memberships.userId,input.data.assignedUserId),eq(memberships.status,"active"))).limit(1);
+   if(!assignee)return {conflict:true,error:"assignee_not_in_workspace"};
+  }
   const [item]=await tx.insert(workItems).values({workspaceId,createdByUserId:userId,...input.data,dueAt:input.data.dueAt?new Date(input.data.dueAt):null}).returning();
   await tx.insert(workItemEvents).values({workspaceId,workItemId:item.id,actorUserId:userId,eventType:"created",toStatus:item.status,detail:"Work item created"});
   return {item};
@@ -90,8 +96,12 @@ tasksRouter.patch("/:workspaceId/tasks/:taskId",async(req,res)=>{
  return inWorkspace(req,res,async(tx,userId,workspaceId)=>{
   const [current]=await tx.select().from(workItems).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,workspaceId))).limit(1);
   if(!current)return {notFound:true};
-  if(input.data.status&&input.data.status!==current.status&&!transitions[current.status]?.includes(input.data.status))
-   return {conflict:true,error:"invalid_status_transition",from:current.status,to:input.data.status,allowed:transitions[current.status]??[]};
+  if(input.data.assignedUserId){
+   const [assignee]=await tx.select({id:memberships.id}).from(memberships).where(and(eq(memberships.workspaceId,workspaceId),eq(memberships.userId,input.data.assignedUserId),eq(memberships.status,"active"))).limit(1);
+   if(!assignee)return {conflict:true,error:"assignee_not_in_workspace"};
+  }
+  if(input.data.status&&input.data.status!==current.status&&!allowedStatusTransitions[current.status]?.includes(input.data.status))
+   return {conflict:true,error:"invalid_status_transition",from:current.status,to:input.data.status,allowed:allowedStatusTransitions[current.status]??[]};
   const changes:any={...input.data,updatedAt:new Date()};
   if(input.data.dueAt!==undefined)changes.dueAt=input.data.dueAt?new Date(input.data.dueAt):null;
   const [item]=await tx.update(workItems).set(changes).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,workspaceId))).returning();

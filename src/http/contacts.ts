@@ -34,6 +34,8 @@ async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string
    return action(tx,user.id,workspaceId.data);
   });
   if(result===null)return res.status(403).json({error:"workspace_access_denied"});
+  if(result&&typeof result==="object"&&"notFound" in result)return res.status(404).json(result);
+  if(result&&typeof result==="object"&&"conflict" in result)return res.status(409).json(result);
   return res.json(result);
  }catch(error){
   const requestId=res.locals.requestId;
