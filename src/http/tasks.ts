@@ -1,7 +1,7 @@
 import {Router,type Request,type Response} from "express";
 import {and,desc,eq} from "drizzle-orm";
 import {z} from "zod";
-import {agentRequests,memberships,workItemEvents,workItems} from "../db/schema.js";
+import {agentRequests,memberships,projects,workItemEvents,workItems} from "../db/schema.js";
 import {withAuthorizedWorkspace,canWriteRole} from "./workspace-context.js";
 
 export const tasksRouter=Router();
@@ -15,6 +15,7 @@ const workItemFields={
  dueAt:z.string().datetime().nullable().optional(),
  assignedUserId:z.string().uuid().nullable().optional(),
  assignedAgent:z.string().trim().min(1).max(80).nullable().optional(),
+ projectId:z.string().uuid().nullable().optional(),
  acceptanceCriteria:z.string().trim().max(10000).nullable().optional(),
  latestEvidence:z.string().trim().max(12000).nullable().optional(),
  nextAction:z.string().trim().max(2000).nullable().optional()
@@ -38,12 +39,13 @@ export const allowedStatusTransitions:Record<string,string[]>={
 export function canTransitionWorkItem(from:string,to:string){return from===to||(allowedStatusTransitions[from]??[]).includes(to);}
 
 tasksRouter.get("/:workspaceId/tasks",async(req,res)=>{
- const query=z.object({status:z.enum(statuses).optional(),assignedUserId:z.string().uuid().optional(),limit:z.coerce.number().int().min(1).max(100).default(50),offset:z.coerce.number().int().min(0).default(0)}).safeParse(req.query);
+ const query=z.object({status:z.enum(statuses).optional(),assignedUserId:z.string().uuid().optional(),projectId:z.string().uuid().optional(),limit:z.coerce.number().int().min(1).max(100).default(50),offset:z.coerce.number().int().min(0).default(0)}).safeParse(req.query);
  if(!query.success)return res.status(400).json({error:"invalid_query"});
  return withAuthorizedWorkspace(req,res,async tx=>{
   const filters=[eq(workItems.workspaceId,req.params.workspaceId)];
   if(query.data.status)filters.push(eq(workItems.status,query.data.status));
   if(query.data.assignedUserId)filters.push(eq(workItems.assignedUserId,query.data.assignedUserId));
+  if(query.data.projectId)filters.push(eq(workItems.projectId,query.data.projectId));
   const items=await tx.select().from(workItems).where(and(...filters)).orderBy(desc(workItems.updatedAt)).limit(query.data.limit).offset(query.data.offset);
   return {items,limit:query.data.limit,offset:query.data.offset};
  });
@@ -53,6 +55,10 @@ tasksRouter.post("/:workspaceId/tasks",async(req,res)=>{
  const input=createWorkItem.safeParse(req.body);
  if(!input.success)return res.status(400).json({error:"invalid_task",details:input.error.flatten()});
  return withAuthorizedWorkspace(req,res,async(tx,userId,workspaceId)=>{
+  if(input.data.projectId){
+   const [project]=await tx.select({id:projects.id}).from(projects).where(and(eq(projects.id,input.data.projectId),eq(projects.workspaceId,workspaceId))).limit(1);
+   if(!project)return {conflict:true,error:"project_not_in_workspace"};
+  }
   if(input.data.assignedUserId){
    const [assignee]=await tx.select({id:memberships.id}).from(memberships).where(and(eq(memberships.workspaceId,workspaceId),eq(memberships.userId,input.data.assignedUserId),eq(memberships.status,"active"))).limit(1);
    if(!assignee)return {conflict:true,error:"assignee_not_in_workspace"};
@@ -80,6 +86,10 @@ tasksRouter.patch("/:workspaceId/tasks/:taskId",async(req,res)=>{
  return withAuthorizedWorkspace(req,res,async(tx,userId,workspaceId)=>{
   const [current]=await tx.select().from(workItems).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,workspaceId))).limit(1);
   if(!current)return {notFound:true};
+  if(input.data.projectId){
+   const [project]=await tx.select({id:projects.id}).from(projects).where(and(eq(projects.id,input.data.projectId),eq(projects.workspaceId,workspaceId))).limit(1);
+   if(!project)return {conflict:true,error:"project_not_in_workspace"};
+  }
   if(input.data.assignedUserId){
    const [assignee]=await tx.select({id:memberships.id}).from(memberships).where(and(eq(memberships.workspaceId,workspaceId),eq(memberships.userId,input.data.assignedUserId),eq(memberships.status,"active"))).limit(1);
    if(!assignee)return {conflict:true,error:"assignee_not_in_workspace"};
