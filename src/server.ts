@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import helmet from 'helmet/module';
+import { rateLimit } from 'express-rate-limit';
 import { randomUUID } from 'node:crypto';
 import { eq,and } from 'drizzle-orm';
 import { config } from './config.js';
