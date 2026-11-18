@@ -17,7 +17,9 @@ export const createWorkItem=z.object({
  dueAt:z.string().datetime().nullable().optional(),
  assignedUserId:z.string().uuid().nullable().optional(),
  assignedAgent:z.string().trim().min(1).max(80).nullable().optional(),
- acceptanceCriteria:z.string().trim().max(10000).nullable().optional()
+ acceptanceCriteria:z.string().trim().max(10000).nullable().optional(),
+ latestEvidence:z.string().trim().max(12000).nullable().optional(),
+ nextAction:z.string().trim().max(2000).nullable().optional()
 }).strict();
 export const updateWorkItem=createWorkItem.partial().refine(v=>Object.keys(v).length>0,"At least one field is required");
 export const createAgentRequest=z.object({
@@ -33,6 +35,8 @@ export const allowedStatusTransitions:Record<string,string[]>={
  testing:["in_progress","done"],
  done:["in_progress"]
 };
+
+export function canTransitionWorkItem(from:string,to:string){return from===to||(allowedStatusTransitions[from]??[]).includes(to);}
 
 async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string,workspaceId:string)=>Promise<unknown>){
  if(!oidcConfigured)return res.status(503).json({error:"identity_provider_not_configured"});
@@ -88,6 +92,15 @@ tasksRouter.post("/:workspaceId/tasks",async(req,res)=>{
  });
 });
 
+tasksRouter.get("/:workspaceId/tasks/:taskId",async(req,res)=>{
+ const task=z.string().uuid().safeParse(req.params.taskId);
+ if(!task.success)return res.status(400).json({error:"invalid_task_id"});
+ return inWorkspace(req,res,async tx=>{
+  const [item]=await tx.select().from(workItems).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,req.params.workspaceId))).limit(1);
+  return item?{item}:{notFound:true};
+ });
+});
+
 tasksRouter.patch("/:workspaceId/tasks/:taskId",async(req,res)=>{
  const workspace=z.string().uuid().safeParse(req.params.workspaceId),task=z.string().uuid().safeParse(req.params.taskId);
  if(!workspace.success||!task.success)return res.status(400).json({error:"invalid_resource_id"});
@@ -100,7 +113,7 @@ tasksRouter.patch("/:workspaceId/tasks/:taskId",async(req,res)=>{
    const [assignee]=await tx.select({id:memberships.id}).from(memberships).where(and(eq(memberships.workspaceId,workspaceId),eq(memberships.userId,input.data.assignedUserId),eq(memberships.status,"active"))).limit(1);
    if(!assignee)return {conflict:true,error:"assignee_not_in_workspace"};
   }
-  if(input.data.status&&input.data.status!==current.status&&!allowedStatusTransitions[current.status]?.includes(input.data.status))
+  if(input.data.status&&input.data.status!==current.status&&!canTransitionWorkItem(current.status,input.data.status))
    return {conflict:true,error:"invalid_status_transition",from:current.status,to:input.data.status,allowed:allowedStatusTransitions[current.status]??[]};
   const changes:any={...input.data,updatedAt:new Date()};
   if(input.data.dueAt!==undefined)changes.dueAt=input.data.dueAt?new Date(input.data.dueAt):null;
@@ -122,6 +135,17 @@ tasksRouter.post("/:workspaceId/tasks/:taskId/agent-requests",async(req,res)=>{
   const [request]=await tx.insert(agentRequests).values({workspaceId,workItemId:item.id,requestedByUserId:userId,agentKey:input.data.agentKey,prompt:input.data.prompt,status:"queued"}).returning();
   await tx.insert(workItemEvents).values({workspaceId,workItemId:item.id,actorUserId:userId,eventType:"agent_request_queued",detail:"Request "+request.id+" queued for "+request.agentKey});
   return {request:{id:request.id,status:request.status,agentKey:request.agentKey,createdAt:request.createdAt},message:"Request queued. An agent worker must claim it before work begins."};
+ });
+});
+
+tasksRouter.get("/:workspaceId/tasks/:taskId/agent-requests",async(req,res)=>{
+ const task=z.string().uuid().safeParse(req.params.taskId);
+ if(!task.success)return res.status(400).json({error:"invalid_task_id"});
+ return inWorkspace(req,res,async tx=>{
+  const [item]=await tx.select({id:workItems.id}).from(workItems).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,req.params.workspaceId))).limit(1);
+  if(!item)return {notFound:true};
+  const requests=await tx.select({id:agentRequests.id,agentKey:agentRequests.agentKey,status:agentRequests.status,prompt:agentRequests.prompt,resultSummary:agentRequests.resultSummary,createdAt:agentRequests.createdAt,startedAt:agentRequests.startedAt,completedAt:agentRequests.completedAt}).from(agentRequests).where(and(eq(agentRequests.workspaceId,req.params.workspaceId),eq(agentRequests.workItemId,task.data))).orderBy(desc(agentRequests.createdAt)).limit(50);
+  return {requests};
  });
 });
 

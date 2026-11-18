@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createWorkItem,updateWorkItem,createAgentRequest} from "../src/http/tasks.js";
+import {createWorkItem,updateWorkItem,createAgentRequest,canTransitionWorkItem} from "../src/http/tasks.js";
 
 test("work item requires a title and applies safe defaults",()=>{
  const result=createWorkItem.safeParse({title:"Prepare monthly report"});
@@ -26,4 +26,15 @@ test("agent request requires a useful prompt and defaults to admin agent",()=>{
 test("agent request rejects short or oversized prompts",()=>{
  assert.equal(createAgentRequest.safeParse({prompt:"fix"}).success,false);
  assert.equal(createAgentRequest.safeParse({prompt:"x".repeat(12001)}).success,false);
+});
+
+test("work item evidence and next action fields are accepted",()=>{
+ const result=createWorkItem.safeParse({title:"Investigate failed deployment",latestEvidence:"CI run 123 failed in integration tests",nextAction:"Reproduce with the same commit"});
+ assert.equal(result.success,true);
+});
+test("work item lifecycle only permits explicit forward and reopen transitions",()=>{
+ assert.equal(canTransitionWorkItem("testing","done"),true);
+ assert.equal(canTransitionWorkItem("done","in_progress"),true);
+ assert.equal(canTransitionWorkItem("backlog","done"),false);
+ assert.equal(canTransitionWorkItem("done","blocked"),false);
 });
