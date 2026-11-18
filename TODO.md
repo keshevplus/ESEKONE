@@ -6,8 +6,8 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 ## Foundation
 - [x] **EKO-001 — Establish independent platform architecture** — `done` — Modular-monolith boundaries, API runtime, three-repository responsibilities and release flow documented.
 - [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `in_progress` — Initial PostgreSQL schema, separate migration/runtime roles, least-privilege grants and forced RLS are implemented; provision a dedicated managed database and run migrations before integration.
-- [ ] **EKO-003 — Complete and verify tenant isolation** — `in_progress` — OIDC verification, membership checks and PostgreSQL RLS baseline are implemented; add cross-tenant denial and write-isolation integration tests.
-- [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Typecheck/build gates pass; CRM validation unit tests are being added, with integration and security checks still outstanding.
+- [ ] **EKO-003 — Complete and verify tenant isolation** — `in_progress` — OIDC verification, membership checks, forced PostgreSQL RLS and cross-tenant read/write denial tests are implemented in CI; validate the same controls against the provisioned production database.
+- [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Typecheck, production build, unit tests, PostgreSQL migrations and cross-tenant RLS integration tests run in CI; production environment and broader security checks remain.
 
 ## SaaS platform
 - [ ] **EKO-010 — Organization and workspace provisioning** — `in_progress` — Verified-identity onboarding creates an organization, first workspace and owner membership; invitation and multi-workspace administration remain.
@@ -19,7 +19,7 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 ## Business OS modules
 - [ ] **EKO-020 — Configurable CRM and customer records** — `in_progress` — First workspace-scoped contacts API and validation tests are implemented; expand to custom fields, timeline and imports.
 - [ ] **EKO-021 — Sales pipeline and revenue operations** — `backlog`
-- [ ] **EKO-022 — Universal tasks, projects and team workload** — `in_progress` — Workspace-scoped work items, lifecycle validation, event history and agent-request queue implemented; projects, workload views and worker execution remain.
+- [ ] **EKO-022 — Universal tasks, projects and team workload** — `in_progress` — Workspace-scoped work items, project CRUD/linking, lifecycle validation, event history and agent-request queue implemented; workload views and provider-backed worker execution remain.
 - [ ] **EKO-023 — Calendar, appointments and resource scheduling** — `backlog`
 - [ ] **EKO-024 — Products, orders and inventory** — `backlog`
 - [ ] **EKO-025 — Documents, communications and integrations** — `backlog`
