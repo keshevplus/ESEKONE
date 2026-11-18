@@ -2,7 +2,7 @@ import type {Request,Response} from "express";
 import {and,eq} from "drizzle-orm";
 import {db} from "../db/client.js";
 import {memberships,users} from "../db/schema.js";
-import {withWorkspaceContext} from "../db/tenant.js";
+import {withUserContext,withWorkspaceContext} from "../db/tenant.js";
 import {authenticateAuthorizationHeader,oidcConfigured} from "../auth/oidc.js";
 
 export function canWriteRole(role:string){return ["owner","admin","manager","member"].includes(role);}
@@ -22,15 +22,11 @@ export async function withAuthorizedWorkspace(
  try{
   const [user]=await db.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1);
   if(!user)return res.status(403).json({error:"account_not_provisioned"});
-  const result=await withWorkspaceContext(workspaceId,user.id,async tx=>{
-   const [membership]=await tx.select({id:memberships.id,role:memberships.role}).from(memberships)
-    .where(and(eq(memberships.workspaceId,workspaceId),eq(memberships.userId,user.id),eq(memberships.status,"active"))).limit(1);
-   if(!membership)return null;
-   if(write&&!canWriteRole(membership.role))return {forbidden:true};
-   return action(tx,user.id,workspaceId);
-  });
-  if(result===null)return res.status(403).json({error:"workspace_access_denied"});
-  if(result&&typeof result==="object"&&"forbidden" in result)return res.status(403).json({error:"insufficient_workspace_role"});
+  const [membership]=await withUserContext(user.id,tx=>tx.select({id:memberships.id,role:memberships.role}).from(memberships)
+   .where(and(eq(memberships.workspaceId,workspaceId),eq(memberships.userId,user.id),eq(memberships.status,"active"))).limit(1));
+  if(!membership)return res.status(403).json({error:"workspace_access_denied"});
+  if(write&&!canWriteRole(membership.role))return res.status(403).json({error:"insufficient_workspace_role"});
+  const result=await withWorkspaceContext(workspaceId,user.id,tx=>action(tx,user.id,workspaceId));
   if(result&&typeof result==="object"&&"notFound" in result)return res.status(404).json(result);
   if(result&&typeof result==="object"&&"conflict" in result)return res.status(409).json(result);
   return res.json(result);
