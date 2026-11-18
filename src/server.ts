@@ -40,7 +40,7 @@ app.get('/v1/me',async(req,res)=>{
  let identity;
  try{identity=await authenticateAuthorizationHeader(req.headers.authorization);}catch{return res.status(401).json({error:'invalid_token'});}
  if(!identity)return res.status(401).json({error:'authentication_required'});
- const [user]=await withIdentityContext(identity.subject,tx=>tx.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1));
+ const [user]=await withIdentityContext<(typeof users.$inferSelect)[]>(identity.subject,tx=>tx.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1));
  if(!user)return res.status(403).json({error:'account_not_provisioned'});
  const membershipsForUser=await withUserContext(user.id,tx=>tx.select({workspaceId:workspaces.id,workspaceName:workspaces.name,workspaceSlug:workspaces.slug,organizationId:workspaces.organizationId,role:memberships.role})
   .from(memberships).innerJoin(workspaces,eq(memberships.workspaceId,workspaces.id))

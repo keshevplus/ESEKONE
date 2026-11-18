@@ -28,10 +28,10 @@ onboardingRouter.post("/workspaces",async(req,res)=>{
  const input=createWorkspaceInput.safeParse(req.body);
  if(!input.success)return res.status(400).json({error:"invalid_workspace",details:input.error.flatten()});
  try{
-  let [user]=await withIdentityContext(identity.subject,tx=>tx.select().from(users).where(eq(users.identitySubject,identity.subject)).limit(1));
+  let [user]=await withIdentityContext<(typeof users.$inferSelect)[]>(identity.subject,tx=>tx.select().from(users).where(eq(users.identitySubject,identity.subject)).limit(1));
   if(!user){
    const email=identity.email.toLowerCase();
-   [user]=await withIdentityContext(identity.subject,tx=>tx.insert(users).values({identitySubject:identity.subject,email,displayName:identity.name??null,active:true}).returning());
+   [user]=await withIdentityContext<(typeof users.$inferSelect)[]>(identity.subject,tx=>tx.insert(users).values({identitySubject:identity.subject,email,displayName:identity.name??null,active:true}).returning());
   }
   if(!user.active)return res.status(403).json({error:"account_disabled"});
   const result=await withBootstrapContext(user.id,async tx=>{
