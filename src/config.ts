@@ -7,8 +7,9 @@ const schema=z.object({
  DATABASE_URL:z.string().url().optional(),
  OIDC_ISSUER:z.string().url().optional(),
  OIDC_AUDIENCE:z.string().optional(),
- OIDC_JWKS_URL:z.string().url().optional()
+ OIDC_JWKS_URL:z.string().url().optional(),
+ AGENT_WORKER_TOKEN:z.string().min(32).optional()
 });
 const parsed=schema.safeParse(process.env);
 if(!parsed.success)throw new Error('Invalid environment configuration: '+parsed.error.issues.map(i=>i.path.join('.')+': '+i.message).join('; '));
-export const config={...parsed.data,corsOrigins:parsed.data.CORS_ORIGINS.split(',').map(s=>s.trim()).filter(Boolean),isProduction:parsed.data.NODE_ENV==='production'};
+export const config={...parsed.data,corsOrigins:parsed.data.CORS_ORIGINS.split(',').map(s=>s.trim()).filter(Boolean),isProduction:parsed.data.NODE_ENV==='production',agentWorkerConfigured:Boolean(parsed.data.AGENT_WORKER_TOKEN)};

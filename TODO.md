@@ -27,7 +27,7 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 - [ ] **EKO-027 — Reporting and business intelligence** — `backlog`
 
 ## AI workforce
-- [ ] **EKO-030 — Agent runtime, tool registry and policy enforcement** — `backlog`
+- [ ] **EKO-030 — Agent runtime, tool registry and policy enforcement** — `in_progress` — Authenticated worker claim/complete contract, queue locking and evidence-backed non-final status updates implemented; provider execution and scoped tool registry remain.
 - [ ] **EKO-031 — CRM, Task, Growth, Operations and Support agents** — `backlog`
 - [ ] **EKO-032 — Admin AI orchestrator and handoff protocol** — `backlog`
 - [ ] **EKO-033 — Evidence-based TODO status synchronization** — `backlog`
