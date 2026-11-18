@@ -4,10 +4,10 @@ Statuses: `backlog`, `ready`, `in_progress`, `blocked`, `review`, `testing`, `do
 A task is only `done` when implementation evidence and passing relevant tests are recorded. Failed checks return it to `in_progress` or `blocked`.
 
 ## Foundation
-- [ ] **EKO-001 — Establish independent platform architecture** — `in_progress` — Define service boundaries, runtime, environments and repository responsibilities.
-- [ ] **EKO-002 — Create clean ESEKONE database and migration baseline** — `ready` — No reused clinic schema, records, credentials or production database.
-- [ ] **EKO-003 — Define tenant isolation model** — `ready` — Server-side tenant scoping, isolation tests and cross-tenant denial tests.
-- [ ] **EKO-004 — Establish CI quality gates** — `ready` — Typecheck, lint, unit, integration and security checks.
+- [x] **EKO-001 — Establish independent platform architecture** — `done` — Modular-monolith boundaries, API runtime, three-repository responsibilities and release flow documented.
+- [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `in_progress` — Initial PostgreSQL schema and ordered SQL migrations are committed; provision a dedicated managed database and run migrations before integration.
+- [ ] **EKO-003 — Complete and verify tenant isolation** — `in_progress` — OIDC verification, membership checks and PostgreSQL RLS baseline are implemented; add cross-tenant denial and write-isolation integration tests.
+- [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Typecheck/build gates pass; CRM validation unit tests are being added, with integration and security checks still outstanding.
 
 ## SaaS platform
 - [ ] **EKO-010 — Organization and workspace provisioning** — `backlog`
@@ -17,7 +17,7 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 - [ ] **EKO-014 — Audit events and administrator activity history** — `backlog`
 
 ## Business OS modules
-- [ ] **EKO-020 — Configurable CRM and customer records** — `backlog`
+- [ ] **EKO-020 — Configurable CRM and customer records** — `in_progress` — First workspace-scoped contacts API and validation tests are implemented; expand to custom fields, timeline and imports.
 - [ ] **EKO-021 — Sales pipeline and revenue operations** — `backlog`
 - [ ] **EKO-022 — Universal tasks, projects and team workload** — `backlog`
 - [ ] **EKO-023 — Calendar, appointments and resource scheduling** — `backlog`
