@@ -5,7 +5,7 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 
 ## Foundation
 - [x] **EKO-001 — Establish independent platform architecture** — `done` — Modular-monolith boundaries, API runtime, three-repository responsibilities and release flow documented.
-- [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `in_progress` — Initial PostgreSQL schema and ordered SQL migrations are committed; provision a dedicated managed database and run migrations before integration.
+- [ ] **EKO-002 — Provision and verify the independent ESEKONE database** — `in_progress` — Initial PostgreSQL schema, separate migration/runtime roles, least-privilege grants and forced RLS are implemented; provision a dedicated managed database and run migrations before integration.
 - [ ] **EKO-003 — Complete and verify tenant isolation** — `in_progress` — OIDC verification, membership checks and PostgreSQL RLS baseline are implemented; add cross-tenant denial and write-isolation integration tests.
 - [ ] **EKO-004 — Complete CI quality gates** — `in_progress` — Typecheck/build gates pass; CRM validation unit tests are being added, with integration and security checks still outstanding.
 
