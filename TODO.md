@@ -14,34 +14,34 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 - [ ] **EKO-011 — Identity, MFA, sessions and RBAC** — `in_progress` — OIDC identities require verified email claims; workspace mutations are denied to viewer/unknown roles. Invitations, MFA policy and session lifecycle remain.
 - [ ] **EKO-012 — Plans, subscriptions, billing and entitlements** — `backlog`
 - [ ] **EKO-013 — Usage metering and plan limits** — `backlog`
-- [ ] **EKO-014 — Audit events and administrator activity history** — `backlog`
+- [ ] **EKO-014 — Audit events and administrator activity history** — `in_progress` — Audit-event storage exists; administrator-facing search, retention controls and activity UI remain.
 
 ## Business OS modules
-- [ ] **EKO-020 — Configurable CRM and customer records** — `in_progress` — First workspace-scoped contacts API and validation tests are implemented; expand to custom fields, timeline and imports.
+- [ ] **EKO-020 — Configurable CRM and customer records** — `in_progress` — Workspace-scoped contacts API, validation tests and live Customers UI (search, filters, create and status changes) are in `dev`; custom fields, timeline, imports and bulk operations remain.
 - [ ] **EKO-021 — Sales pipeline and revenue operations** — `backlog`
-- [ ] **EKO-022 — Universal tasks, projects and team workload** — `in_progress` — Workspace-scoped work items, project CRUD/linking, lifecycle validation, event history and agent-request queue implemented; workload views and provider-backed worker execution remain.
-- [ ] **EKO-023 — Calendar, appointments and resource scheduling** — `backlog`
+- [ ] **EKO-022 — Universal tasks, projects and team workload** — `in_progress` — Project and task directories, creation, project linking, allowed lifecycle transitions, event history, agent-request prompts and visible queue states are in web `dev`; workload/assignment views and provider-backed worker execution remain.
+- [ ] **EKO-023 — Calendar, appointments and resource scheduling** — `in_progress` — Month view and selected-day agenda for task due dates are in web `dev`; appointments, recurring events, resource availability and external calendar sync remain.
 - [ ] **EKO-024 — Products, orders and inventory** — `backlog`
 - [ ] **EKO-025 — Documents, communications and integrations** — `backlog`
 - [ ] **EKO-026 — Workflow automation engine** — `backlog`
 - [ ] **EKO-027 — Reporting and business intelligence** — `backlog`
 
 ## AI workforce
-- [ ] **EKO-030 — Agent runtime, tool registry and policy enforcement** — `in_progress` — Authenticated worker claim/complete contract, queue locking and evidence-backed non-final status updates implemented; provider execution and scoped tool registry remain.
+- [ ] **EKO-030 — Agent runtime, tool registry and policy enforcement** — `in_progress` — Authenticated claim/complete API, queue locking, evidence-required non-final completion and UI request/history handoff exist; provider-backed worker loop, scoped tools, retries/timeouts and policy enforcement remain.
 - [ ] **EKO-031 — CRM, Task, Growth, Operations and Support agents** — `backlog`
 - [ ] **EKO-032 — Admin AI orchestrator and handoff protocol** — `backlog`
 - [ ] **EKO-033 — Evidence-based TODO status synchronization** — `backlog`
 - [ ] **EKO-034 — Approval gates for sensitive actions** — `backlog`
 
 ## Experience and launch
-- [ ] **EKO-040 — ESEKONE design system and responsive workspace** — `in_progress`
-- [ ] **EKO-041 — Translation framework and RTL/LTR support** — `ready`
+- [ ] **EKO-040 — ESEKONE design system and responsive workspace** — `in_progress` — Responsive dashboard, Customers, Projects, Tasks and task-deadline Calendar screens are in web `dev`; consolidate shared design tokens/components and complete accessibility/mobile QA.
+- [ ] **EKO-041 — Translation framework and RTL/LTR support** — `in_progress` — English/Hebrew copy and RTL/LTR layouts now cover the dashboard and new workspace modules; centralized translation keys, user locale persistence and completeness QA remain.
 - [ ] **EKO-042 — Public marketing site and conversion flows** — `in_progress`
 - [ ] **EKO-043 — Onboarding, help and product tours** — `backlog`
 
 ## Security and reliability
 - [ ] **EKO-050 — Threat model and security baseline** — `ready`
-- [ ] **EKO-051 — Secret, dependency and static security scanning** — `backlog`
+- [ ] **EKO-051 — Secret, dependency and static security scanning** — `in_progress` — Manual workflow for npm audit, CodeQL security-extended, typecheck, tests and build is on core `dev`; secret scanning, automated dependency update policy and a workflow run from default branch remain.
 - [ ] **EKO-052 — Rate limiting, abuse controls and monitoring** — `backlog`
 - [ ] **EKO-053 — Backup and restore verification** — `backlog`
 - [ ] **EKO-054 — Tenant-isolation and authorization penetration tests** — `backlog`
