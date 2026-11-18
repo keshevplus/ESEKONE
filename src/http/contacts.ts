@@ -7,14 +7,14 @@ import {withWorkspaceContext} from "../db/tenant.js";
 import {authenticateAuthorizationHeader,oidcConfigured} from "../auth/oidc.js";
 
 export const contactsRouter=Router();
-const createContact=z.object({
+export const createContact=z.object({
  fullName:z.string().trim().min(1).max(160),
  email:z.string().trim().email().max(254).nullable().optional(),
  phone:z.string().trim().max(40).nullable().optional(),
  company:z.string().trim().max(160).nullable().optional(),
  status:z.enum(["lead","customer","inactive"]).default("lead")
 }).strict();
-const updateContact=createContact.partial().refine(v=>Object.keys(v).length>0,"At least one field is required");
+export const updateContact=createContact.partial().refine(v=>Object.keys(v).length>0,"At least one field is required");
 
 async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string,workspaceId:string)=>Promise<unknown>){
  if(!oidcConfigured)return res.status(503).json({error:"identity_provider_not_configured"});
