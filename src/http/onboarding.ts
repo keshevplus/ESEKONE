@@ -3,7 +3,7 @@ import {eq} from "drizzle-orm";
 import {z} from "zod";
 import {db} from "../db/client.js";
 import {organizations,memberships,users,workspaces} from "../db/schema.js";
-import {withBootstrapContext} from "../db/tenant.js";
+import {withBootstrapContext,withIdentityContext} from "../db/tenant.js";
 import {authenticateAuthorizationHeader,oidcConfigured} from "../auth/oidc.js";
 
 export const onboardingRouter=Router();
@@ -28,12 +28,18 @@ onboardingRouter.post("/workspaces",async(req,res)=>{
  const input=createWorkspaceInput.safeParse(req.body);
  if(!input.success)return res.status(400).json({error:"invalid_workspace",details:input.error.flatten()});
  try{
-  let [user]=await db.select().from(users).where(eq(users.identitySubject,identity.subject)).limit(1);
+  let [user]=await withIdentityContext(identity.subject,tx=>tx.select().from(users)
+   .where(eq(users.identitySubject,identity.subject)).limit(1));
   if(!user){
-   const email=identity.email.toLowerCase();
-   const [existingEmail]=await db.select({id:users.id}).from(users).where(eq(users.email,email)).limit(1);
-   if(existingEmail)return res.status(409).json({error:"identity_email_conflict"});
-   [user]=await db.insert(users).values({identitySubject:identity.subject,email,displayName:identity.name??null,active:true}).returning();
+   try{
+    [user]=await withIdentityContext(identity.subject,tx=>tx.insert(users).values({
+     identitySubject:identity.subject,email:identity.email.toLowerCase(),
+     displayName:identity.name??null,active:true
+    }).returning());
+   }catch(error){
+    if((error as {code?:string})?.code==="23505")return res.status(409).json({error:"identity_email_conflict"});
+    throw error;
+   }
   }
   if(!user.active)return res.status(403).json({error:"account_disabled"});
   const result=await withBootstrapContext(user.id,async tx=>{
