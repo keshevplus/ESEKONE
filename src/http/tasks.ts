@@ -1,10 +1,8 @@
-import {Router,type Request,type Response} from "express";
+import {Router} from "express";
 import {and,desc,eq} from "drizzle-orm";
 import {z} from "zod";
-import {db} from "../db/client.js";
-import {agentRequests,memberships,users,workItemEvents,workItems} from "../db/schema.js";
-import {withWorkspaceContext} from "../db/tenant.js";
-import {authenticateAuthorizationHeader,oidcConfigured} from "../auth/oidc.js";
+import {agentRequests,memberships,projects,workItemEvents,workItems} from "../db/schema.js";
+import {withAuthorizedWorkspace} from "./workspace-context.js";
 
 export const tasksRouter=Router();
 const statuses=["backlog","ready","in_progress","blocked","review","testing","done"] as const;
@@ -17,6 +15,7 @@ const workItemFields={
  dueAt:z.string().datetime().nullable().optional(),
  assignedUserId:z.string().uuid().nullable().optional(),
  assignedAgent:z.string().trim().min(1).max(80).nullable().optional(),
+ projectId:z.string().uuid().nullable().optional(),
  acceptanceCriteria:z.string().trim().max(10000).nullable().optional(),
  latestEvidence:z.string().trim().max(12000).nullable().optional(),
  nextAction:z.string().trim().max(2000).nullable().optional()
@@ -39,44 +38,14 @@ export const allowedStatusTransitions:Record<string,string[]>={
 
 export function canTransitionWorkItem(from:string,to:string){return from===to||(allowedStatusTransitions[from]??[]).includes(to);}
 
-export function canWriteRole(role:string){return ["owner","admin","manager","member"].includes(role);}
-async function inWorkspace(req:Request,res:Response,action:(tx:any,userId:string,workspaceId:string)=>Promise<unknown>,write=false){
- if(!oidcConfigured)return res.status(503).json({error:"identity_provider_not_configured"});
- if(!db)return res.status(503).json({error:"database_not_configured"});
- let identity;
- try{identity=await authenticateAuthorizationHeader(req.headers.authorization);}catch{return res.status(401).json({error:"invalid_token"});}
- if(!identity)return res.status(401).json({error:"authentication_required"});
- const workspaceId=z.string().uuid().safeParse(req.params.workspaceId);
- if(!workspaceId.success)return res.status(400).json({error:"invalid_workspace_id"});
- try{
-  const [user]=await db.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1);
-  if(!user)return res.status(403).json({error:"account_not_provisioned"});
-  const result=await withWorkspaceContext(workspaceId.data,user.id,async tx=>{
-   const [membership]=await tx.select({id:memberships.id,role:memberships.role}).from(memberships)
-    .where(and(eq(memberships.workspaceId,workspaceId.data),eq(memberships.userId,user.id),eq(memberships.status,"active"))).limit(1);
-   if(!membership)return null;
-   if(write&&!canWriteRole(membership.role))return {forbidden:true};
-   return action(tx,user.id,workspaceId.data);
-  });
-  if(result===null)return res.status(403).json({error:"workspace_access_denied"});
-  if(result&&typeof result==="object"&&"forbidden" in result)return res.status(403).json({error:"insufficient_workspace_role"});
-  if(result&&typeof result==="object"&&"notFound" in result)return res.status(404).json(result);
-  if(result&&typeof result==="object"&&"conflict" in result)return res.status(409).json(result);
-  return res.json(result);
- }catch(error){
-  const requestId=res.locals.requestId;
-  console.error("Task request failed",requestId,error instanceof Error?error.message:"unknown");
-  return res.status(500).json({error:"request_failed",requestId});
- }
-}
-
 tasksRouter.get("/:workspaceId/tasks",async(req,res)=>{
- const query=z.object({status:z.enum(statuses).optional(),assignedUserId:z.string().uuid().optional(),limit:z.coerce.number().int().min(1).max(100).default(50),offset:z.coerce.number().int().min(0).default(0)}).safeParse(req.query);
+ const query=z.object({status:z.enum(statuses).optional(),assignedUserId:z.string().uuid().optional(),projectId:z.string().uuid().optional(),limit:z.coerce.number().int().min(1).max(100).default(50),offset:z.coerce.number().int().min(0).default(0)}).safeParse(req.query);
  if(!query.success)return res.status(400).json({error:"invalid_query"});
- return inWorkspace(req,res,async tx=>{
+ return withAuthorizedWorkspace(req,res,async tx=>{
   const filters=[eq(workItems.workspaceId,req.params.workspaceId)];
   if(query.data.status)filters.push(eq(workItems.status,query.data.status));
   if(query.data.assignedUserId)filters.push(eq(workItems.assignedUserId,query.data.assignedUserId));
+  if(query.data.projectId)filters.push(eq(workItems.projectId,query.data.projectId));
   const items=await tx.select().from(workItems).where(and(...filters)).orderBy(desc(workItems.updatedAt)).limit(query.data.limit).offset(query.data.offset);
   return {items,limit:query.data.limit,offset:query.data.offset};
  });
@@ -85,7 +54,11 @@ tasksRouter.get("/:workspaceId/tasks",async(req,res)=>{
 tasksRouter.post("/:workspaceId/tasks",async(req,res)=>{
  const input=createWorkItem.safeParse(req.body);
  if(!input.success)return res.status(400).json({error:"invalid_task",details:input.error.flatten()});
- return inWorkspace(req,res,async(tx,userId,workspaceId)=>{
+ return withAuthorizedWorkspace(req,res,async(tx,userId,workspaceId)=>{
+  if(input.data.projectId){
+   const [project]=await tx.select({id:projects.id}).from(projects).where(and(eq(projects.id,input.data.projectId),eq(projects.workspaceId,workspaceId))).limit(1);
+   if(!project)return {conflict:true,error:"project_not_in_workspace"};
+  }
   if(input.data.assignedUserId){
    const [assignee]=await tx.select({id:memberships.id}).from(memberships).where(and(eq(memberships.workspaceId,workspaceId),eq(memberships.userId,input.data.assignedUserId),eq(memberships.status,"active"))).limit(1);
    if(!assignee)return {conflict:true,error:"assignee_not_in_workspace"};
@@ -99,7 +72,7 @@ tasksRouter.post("/:workspaceId/tasks",async(req,res)=>{
 tasksRouter.get("/:workspaceId/tasks/:taskId",async(req,res)=>{
  const task=z.string().uuid().safeParse(req.params.taskId);
  if(!task.success)return res.status(400).json({error:"invalid_task_id"});
- return inWorkspace(req,res,async tx=>{
+ return withAuthorizedWorkspace(req,res,async tx=>{
   const [item]=await tx.select().from(workItems).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,req.params.workspaceId))).limit(1);
   return item?{item}:{notFound:true};
  });
@@ -110,9 +83,13 @@ tasksRouter.patch("/:workspaceId/tasks/:taskId",async(req,res)=>{
  if(!workspace.success||!task.success)return res.status(400).json({error:"invalid_resource_id"});
  const input=updateWorkItem.safeParse(req.body);
  if(!input.success)return res.status(400).json({error:"invalid_task",details:input.error.flatten()});
- return inWorkspace(req,res,async(tx,userId,workspaceId)=>{
+ return withAuthorizedWorkspace(req,res,async(tx,userId,workspaceId)=>{
   const [current]=await tx.select().from(workItems).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,workspaceId))).limit(1);
   if(!current)return {notFound:true};
+  if(input.data.projectId){
+   const [project]=await tx.select({id:projects.id}).from(projects).where(and(eq(projects.id,input.data.projectId),eq(projects.workspaceId,workspaceId))).limit(1);
+   if(!project)return {conflict:true,error:"project_not_in_workspace"};
+  }
   if(input.data.assignedUserId){
    const [assignee]=await tx.select({id:memberships.id}).from(memberships).where(and(eq(memberships.workspaceId,workspaceId),eq(memberships.userId,input.data.assignedUserId),eq(memberships.status,"active"))).limit(1);
    if(!assignee)return {conflict:true,error:"assignee_not_in_workspace"};
@@ -133,10 +110,13 @@ tasksRouter.post("/:workspaceId/tasks/:taskId/agent-requests",async(req,res)=>{
  if(!workspace.success||!task.success)return res.status(400).json({error:"invalid_resource_id"});
  const input=createAgentRequest.safeParse(req.body);
  if(!input.success)return res.status(400).json({error:"invalid_agent_request",details:input.error.flatten()});
- return inWorkspace(req,res,async(tx,userId,workspaceId)=>{
-  const [item]=await tx.select({id:workItems.id}).from(workItems).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,workspaceId))).limit(1);
+ return withAuthorizedWorkspace(req,res,async(tx,userId,workspaceId)=>{
+  const [item]=await tx.select({id:workItems.id,status:workItems.status}).from(workItems).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,workspaceId))).limit(1);
   if(!item)return {notFound:true};
+  if(!canTransitionWorkItem(item.status,"in_progress"))return {conflict:true,error:"task_cannot_be_started",status:item.status};
   const [request]=await tx.insert(agentRequests).values({workspaceId,workItemId:item.id,requestedByUserId:userId,agentKey:input.data.agentKey,prompt:input.data.prompt,status:"queued"}).returning();
+  await tx.update(workItems).set({status:"in_progress",assignedAgent:input.data.agentKey,updatedAt:new Date()}).where(eq(workItems.id,item.id));
+  if(item.status!=="in_progress")await tx.insert(workItemEvents).values({workspaceId,workItemId:item.id,actorUserId:userId,eventType:"status_changed",fromStatus:item.status,toStatus:"in_progress",detail:"Started by agent request"});
   await tx.insert(workItemEvents).values({workspaceId,workItemId:item.id,actorUserId:userId,eventType:"agent_request_queued",detail:"Request "+request.id+" queued for "+request.agentKey});
   return {request:{id:request.id,status:request.status,agentKey:request.agentKey,createdAt:request.createdAt},message:"Request queued. An agent worker must claim it before work begins."};
  },true);
@@ -145,7 +125,7 @@ tasksRouter.post("/:workspaceId/tasks/:taskId/agent-requests",async(req,res)=>{
 tasksRouter.get("/:workspaceId/tasks/:taskId/agent-requests",async(req,res)=>{
  const task=z.string().uuid().safeParse(req.params.taskId);
  if(!task.success)return res.status(400).json({error:"invalid_task_id"});
- return inWorkspace(req,res,async tx=>{
+ return withAuthorizedWorkspace(req,res,async tx=>{
   const [item]=await tx.select({id:workItems.id}).from(workItems).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,req.params.workspaceId))).limit(1);
   if(!item)return {notFound:true};
   const requests=await tx.select({id:agentRequests.id,agentKey:agentRequests.agentKey,status:agentRequests.status,prompt:agentRequests.prompt,resultSummary:agentRequests.resultSummary,createdAt:agentRequests.createdAt,startedAt:agentRequests.startedAt,completedAt:agentRequests.completedAt}).from(agentRequests).where(and(eq(agentRequests.workspaceId,req.params.workspaceId),eq(agentRequests.workItemId,task.data))).orderBy(desc(agentRequests.createdAt)).limit(50);
@@ -156,7 +136,7 @@ tasksRouter.get("/:workspaceId/tasks/:taskId/agent-requests",async(req,res)=>{
 tasksRouter.get("/:workspaceId/tasks/:taskId/events",async(req,res)=>{
  const task=z.string().uuid().safeParse(req.params.taskId);
  if(!task.success)return res.status(400).json({error:"invalid_task_id"});
- return inWorkspace(req,res,async(tx,_userId,workspaceId)=>{
+ return withAuthorizedWorkspace(req,res,async(tx,_userId,workspaceId)=>{
   const events=await tx.select().from(workItemEvents).where(and(eq(workItemEvents.workspaceId,workspaceId),eq(workItemEvents.workItemId,task.data))).orderBy(desc(workItemEvents.createdAt)).limit(100);
   return {events};
  });

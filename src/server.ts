@@ -8,11 +8,12 @@ import { config } from './config.js';
 import { authenticateAuthorizationHeader,oidcConfigured } from './auth/oidc.js';
 import { db,checkDatabase } from './db/client.js';
 import { users,memberships,workspaces } from './db/schema.js';
-import { withUserContext } from './db/tenant.js';
+import { withIdentityContext,withUserContext } from './db/tenant.js';
 import { contactsRouter } from './http/contacts.js';
 import { tasksRouter } from './http/tasks.js';
 import { onboardingRouter } from './http/onboarding.js';
 import { agentWorkerRouter } from './http/agent-worker.js';
+import { projectsRouter } from './http/projects.js';
 
 const app=express();
 app.disable('x-powered-by');
@@ -31,6 +32,7 @@ app.use('/internal/agent-requests',agentWorkerRouter);
 app.use('/v1/onboarding',onboardingRouter);
 app.use('/v1/workspaces',contactsRouter);
 app.use('/v1/workspaces',tasksRouter);
+app.use('/v1/workspaces',projectsRouter);
 
 app.get('/v1/me',async(req,res)=>{
  if(!oidcConfigured)return res.status(503).json({error:'identity_provider_not_configured'});
@@ -38,7 +40,7 @@ app.get('/v1/me',async(req,res)=>{
  let identity;
  try{identity=await authenticateAuthorizationHeader(req.headers.authorization);}catch{return res.status(401).json({error:'invalid_token'});}
  if(!identity)return res.status(401).json({error:'authentication_required'});
- const [user]=await db.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1);
+ const [user]=await withIdentityContext<(typeof users.$inferSelect)[]>(identity.subject,tx=>tx.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1));
  if(!user)return res.status(403).json({error:'account_not_provisioned'});
  const membershipsForUser=await withUserContext(user.id,tx=>tx.select({workspaceId:workspaces.id,workspaceName:workspaces.name,workspaceSlug:workspaces.slug,organizationId:workspaces.organizationId,role:memberships.role})
   .from(memberships).innerJoin(workspaces,eq(memberships.workspaceId,workspaces.id))
