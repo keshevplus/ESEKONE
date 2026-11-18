@@ -54,6 +54,8 @@ After promotion, verify production health and confirm `dev` and `main` point to 
 ## Current verified state
 
 - Core CI includes a PostgreSQL 16 service, schema-owner migrations, a restricted runtime role, and authenticated cross-tenant isolation tests.
-- Neon has been selected, but no Neon project/branch provisioning or live Neon connection test has yet been verified.
+- Vercel Marketplace Neon is provisioned and linked to the primary `esekone` API project (region `iad1`); the store is active and its deployment integration targets Preview and Production. Neon environment variables are not present on `esekone-web`, the marketing project, or the duplicate backend project.
+- The current API deployment predates Neon environment-variable injection. The injected set includes pooled `DATABASE_URL` and direct `DATABASE_URL_UNPOOLED` / `POSTGRES_URL_NON_POOLING`; the required restricted-role variables `DATABASE_MIGRATION_URL` and `DATABASE_APP_ROLE` are not yet configured. The injected credentials must not be assumed to satisfy the restricted runtime-role policy.
+- Preview/production branch isolation, role-specific credentials, migrations and live Neon connection checks remain unverified; do not redeploy the API or promote release PRs until these gates pass.
 - The web workspace has an OIDC sign-in bootstrap and live overview API integration; environment values and identity-provider registration are still required.
 - A passing CI run does not imply that managed database, OIDC, Vercel deployment, production-domain or backup setup has been completed.
