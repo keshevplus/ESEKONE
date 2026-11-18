@@ -23,7 +23,7 @@ Identity and access · Organizations and workspaces · Subscription and entitlem
 ## Database roles
 - `DATABASE_MIGRATION_URL` uses a separate schema-owner role for ordered migrations.
 - `DATABASE_URL` uses a separate runtime role named by `DATABASE_APP_ROLE`.
-- The runtime role must not own application tables, be a superuser, or have `BYPASSRLS`; migrations grant it only data access and force row-level security on tenant tables.
+- The runtime role can only read its own verified identity row and must not own application tables, be a superuser, or have `BYPASSRLS`; migrations grant it only data access and force row-level security on tenant tables.
 - Create the runtime role before running migrations. Never use the Neon owner connection string as the application runtime URL.
 
 ## Engineering

@@ -35,3 +35,12 @@ export async function withAgentWorkerContext<T>(run:(tx:any)=>Promise<T>):Promis
   return run(tx);
  });
 }
+
+/** Restrict user-row access to the verified identity in the current transaction. */
+export async function withIdentityContext<T>(identitySubject:string,run:(tx:any)=>Promise<T>):Promise<T>{
+ if(!db)throw new Error("DATABASE_URL is not configured");
+ return db.transaction(async tx=>{
+  await tx.execute(sql`select set_config('app.identity_subject', ${identitySubject}, true)`);
+  return run(tx);
+ });
+}

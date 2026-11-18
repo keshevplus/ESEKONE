@@ -2,7 +2,7 @@ import type {Request,Response} from "express";
 import {and,eq} from "drizzle-orm";
 import {db} from "../db/client.js";
 import {memberships,users} from "../db/schema.js";
-import {withUserContext,withWorkspaceContext} from "../db/tenant.js";
+import {withIdentityContext,withUserContext,withWorkspaceContext} from "../db/tenant.js";
 import {authenticateAuthorizationHeader,oidcConfigured} from "../auth/oidc.js";
 
 export function canWriteRole(role:string){return ["owner","admin","manager","member"].includes(role);}
@@ -20,7 +20,7 @@ export async function withAuthorizedWorkspace(
  const workspaceId=zUuid(req.params.workspaceId);
  if(!workspaceId)return res.status(400).json({error:"invalid_workspace_id"});
  try{
-  const [user]=await db.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1);
+  const [user]=await withIdentityContext(identity.subject,tx=>tx.select().from(users).where(and(eq(users.identitySubject,identity.subject),eq(users.active,true))).limit(1));
   if(!user)return res.status(403).json({error:"account_not_provisioned"});
   const membershipRows=await withUserContext<Array<{id:string;role:string}>>(user.id,async tx=>await tx.select({id:memberships.id,role:memberships.role}).from(memberships)
    .where(and(eq(memberships.workspaceId,workspaceId),eq(memberships.userId,user.id),eq(memberships.status,"active"))).limit(1));
