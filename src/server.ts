@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet/module';
+import { createRequire } from 'node:module';
+import type { HelmetOptions } from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { randomUUID } from 'node:crypto';
 import { eq,and } from 'drizzle-orm';
@@ -15,6 +16,9 @@ import { onboardingRouter } from './http/onboarding.js';
 import { agentWorkerRouter } from './http/agent-worker.js';
 import { projectsRouter } from './http/projects.js';
 import { overviewRouter } from './http/overview.js';
+
+const require = createRequire(import.meta.url);
+const helmet = require('helmet') as (options?: HelmetOptions) => express.RequestHandler;
 
 const app=express();
 app.disable('x-powered-by');
