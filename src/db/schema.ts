@@ -34,3 +34,16 @@ export const auditEvents=pgTable("audit_events",{
  action:text("action").notNull(),resourceType:text("resource_type").notNull(),resourceId:text("resource_id"),
  metadata:text("metadata"),createdAt:createdAt()
 },t=>[index("audit_workspace_created_idx").on(t.workspaceId,t.createdAt),index("audit_actor_created_idx").on(t.actorUserId,t.createdAt)]);
+export const contacts=pgTable("contacts",{
+ id:uuid("id").defaultRandom().primaryKey(),
+ workspaceId:uuid("workspace_id").notNull().references(()=>workspaces.id,{onDelete:"cascade"}),
+ fullName:text("full_name").notNull(),
+ email:text("email"),
+ phone:text("phone"),
+ company:text("company"),
+ status:text("status").notNull().default("lead"),
+ createdAt:createdAt(),updatedAt:updatedAt()
+},t=>[
+ index("contacts_workspace_created_idx").on(t.workspaceId,t.createdAt),
+ index("contacts_workspace_email_idx").on(t.workspaceId,t.email)
+]);
