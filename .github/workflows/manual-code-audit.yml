@@ -1,0 +1,137 @@
+name: Manual Code Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: Branch to audit
+        required: true
+        type: choice
+        options:
+          - dev
+          - main
+        default: dev
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+concurrency:
+  group: manual-code-audit-${{ inputs.target_branch }}
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Dependency, static analysis and quality review
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Initialize CodeQL
+        id: codeql_init
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+
+      - name: Install dependencies
+        id: install
+        run: npm install
+        continue-on-error: true
+
+      - name: Audit dependencies
+        id: dependency_audit
+        if: steps.install.outcome == 'success'
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Type check
+        id: typecheck
+        if: steps.install.outcome == 'success'
+        run: npm run typecheck
+        continue-on-error: true
+
+      - name: Run tests
+        id: tests
+        if: steps.install.outcome == 'success'
+        run: npm test
+        continue-on-error: true
+
+      - name: Production build
+        id: build
+        if: steps.install.outcome == 'success'
+        run: npm run build
+        continue-on-error: true
+
+      - name: Analyze source with CodeQL
+        id: codeql
+        uses: github/codeql-action/analyze@v3
+        continue-on-error: true
+
+      - name: Create audit report
+        if: always()
+        env:
+          TARGET_BRANCH: ${{ inputs.target_branch }}
+          INSTALL_RESULT: ${{ steps.install.outcome }}
+          DEPENDENCY_RESULT: ${{ steps.dependency_audit.outcome }}
+          TYPECHECK_RESULT: ${{ steps.typecheck.outcome }}
+          TEST_RESULT: ${{ steps.tests.outcome }}
+          BUILD_RESULT: ${{ steps.build.outcome }}
+          CODEQL_RESULT: ${{ steps.codeql.outcome }}
+        run: |
+          TARGET_SHA="$(git rev-parse HEAD)"
+          {
+            echo "# ESEKONE automated code audit"
+            echo
+            echo "- Branch: `$TARGET_BRANCH`"
+            echo "- Commit: `$TARGET_SHA`"
+            echo "- Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+            echo "| Dependency installation | `$INSTALL_RESULT` |"
+            echo "| npm audit (high and critical) | `$DEPENDENCY_RESULT` |"
+            echo "| TypeScript typecheck | `$TYPECHECK_RESULT` |"
+            echo "| Automated tests | `$TEST_RESULT` |"
+            echo "| Production build | `$BUILD_RESULT` |"
+            echo "| CodeQL security analysis | `$CODEQL_RESULT` |"
+            echo
+            echo "This is an automated dependency, static-analysis and build/test review. It is not a substitute for human review or a runtime penetration test."
+          } | tee audit-results.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: esekone-code-audit-${{ github.run_id }}
+          path: audit-results.md
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Fail when an audit gate fails
+        if: always()
+        env:
+          INSTALL_RESULT: ${{ steps.install.outcome }}
+          DEPENDENCY_RESULT: ${{ steps.dependency_audit.outcome }}
+          TYPECHECK_RESULT: ${{ steps.typecheck.outcome }}
+          TEST_RESULT: ${{ steps.tests.outcome }}
+          BUILD_RESULT: ${{ steps.build.outcome }}
+          CODEQL_RESULT: ${{ steps.codeql.outcome }}
+        run: |
+          for result in "$INSTALL_RESULT" "$DEPENDENCY_RESULT" "$TYPECHECK_RESULT" "$TEST_RESULT" "$BUILD_RESULT" "$CODEQL_RESULT"; do
+            if [ "$result" != "success" ]; then
+              echo "One or more audit gates did not pass."
+              exit 1
+            fi
+          done
