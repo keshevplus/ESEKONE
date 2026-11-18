@@ -49,4 +49,5 @@ app.use((error:unknown,_req:express.Request,res:express.Response,_next:express.N
  const message=error instanceof Error?error.message:'Unexpected server error';
  if(!res.headersSent)res.status(400).json({error:config.isProduction?'Request could not be processed':message,requestId:res.locals.requestId});
 });
-app.listen(config.PORT,()=>process.stdout.write('ESEKONE platform listening on port '+config.PORT+'\\n'));
+if(!process.env.VERCEL)app.listen(config.PORT,()=>process.stdout.write('ESEKONE platform listening on port '+config.PORT+'\\n'));
+export default app;
