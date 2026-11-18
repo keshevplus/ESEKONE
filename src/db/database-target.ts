@@ -19,9 +19,18 @@ export function parseEsekoneDatabaseTarget(
     throw new Error("Database connection URL is invalid");
   }
 
+  if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
+    throw new Error("Database URL must use PostgreSQL");
+  }
+
   const hostname = parsed.hostname.toLowerCase();
   const expectedHostname = expectedHost.trim().toLowerCase();
-  const databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+  let databaseName: string;
+  try {
+    databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+  } catch {
+    throw new Error("Database name in connection URL is invalid");
+  }
 
   if (!expectedHostname || hostname !== expectedHostname) {
     throw new Error("Database host does not match ESEKONE_DATABASE_HOST");
