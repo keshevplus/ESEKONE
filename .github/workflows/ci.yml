@@ -10,13 +10,37 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: esekone
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d esekone"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://esekone_app:${{ github.run_id }}-${{ github.run_attempt }}-integration@localhost:5432/esekone
+      DATABASE_MIGRATION_URL: postgresql://postgres@localhost:5432/esekone
+      DATABASE_APP_ROLE: esekone_app
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-
       - run: npm install
+      - name: Create restricted runtime role
+        run: |
+          APP_PASSWORD="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-integration"
+          psql "$DATABASE_MIGRATION_URL" -v ON_ERROR_STOP=1 -c "CREATE ROLE esekone_app LOGIN PASSWORD '${APP_PASSWORD}'"
+      - name: Apply migrations using schema-owner role
+        run: npm run db:migrate
       - run: npm run typecheck
       - run: npm test
       - run: npm run build

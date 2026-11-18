@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import { createRequire } from 'node:module';
+import type { HelmetOptions } from 'helmet';
+import { rateLimit } from 'express-rate-limit';
 import { randomUUID } from 'node:crypto';
 import { eq,and } from 'drizzle-orm';
 import { config } from './config.js';
@@ -14,6 +15,10 @@ import { tasksRouter } from './http/tasks.js';
 import { onboardingRouter } from './http/onboarding.js';
 import { agentWorkerRouter } from './http/agent-worker.js';
 import { projectsRouter } from './http/projects.js';
+import { overviewRouter } from './http/overview.js';
+
+const require = createRequire(import.meta.url);
+const helmet = require('helmet') as (options?: HelmetOptions) => express.RequestHandler;
 
 const app=express();
 app.disable('x-powered-by');
@@ -33,6 +38,7 @@ app.use('/v1/onboarding',onboardingRouter);
 app.use('/v1/workspaces',contactsRouter);
 app.use('/v1/workspaces',tasksRouter);
 app.use('/v1/workspaces',projectsRouter);
+app.use('/v1/workspaces',overviewRouter);
 
 app.get('/v1/me',async(req,res)=>{
  if(!oidcConfigured)return res.status(503).json({error:'identity_provider_not_configured'});
