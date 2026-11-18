@@ -75,7 +75,7 @@ contactsRouter.patch("/:workspaceId/contacts/:contactId",async(req,res)=>{
    .where(and(eq(contacts.id,contactId.data),eq(contacts.workspaceId,workspace.data))).returning();
   if(!updated)return {notFound:true};
   return {contact:updated};
- }).then(result=>{
+ },true).then(result=>{
   if(res.headersSent)return result;
   return result;
  });

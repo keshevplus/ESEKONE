@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createWorkItem,updateWorkItem,createAgentRequest,canTransitionWorkItem} from "../src/http/tasks.js";
+import {createWorkItem,updateWorkItem,createAgentRequest,canTransitionWorkItem,canWriteRole} from "../src/http/tasks.js";
 
 test("work item requires a title and applies safe defaults",()=>{
  const result=createWorkItem.safeParse({title:"Prepare monthly report"});
@@ -42,4 +42,13 @@ test("work item lifecycle only permits explicit forward and reopen transitions",
 test("new work items cannot be created in review, testing or done states",()=>{
  assert.equal(createWorkItem.safeParse({title:"Task",status:"done"}).success,false);
  assert.equal(createWorkItem.safeParse({title:"Task",status:"ready"}).success,true);
+});
+
+test("workspace write access is limited to recognized operational roles",()=>{
+ assert.equal(canWriteRole("owner"),true);
+ assert.equal(canWriteRole("admin"),true);
+ assert.equal(canWriteRole("manager"),true);
+ assert.equal(canWriteRole("member"),true);
+ assert.equal(canWriteRole("viewer"),false);
+ assert.equal(canWriteRole("unknown"),false);
 });
