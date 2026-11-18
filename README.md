@@ -37,7 +37,7 @@ See [Neon provisioning and operations](docs/NEON_SETUP.md) before configuring an
 - `/v1/workspaces/:workspaceId/contacts` — tenant-scoped contact CRUD.
 - `/v1/workspaces/:workspaceId/projects` — tenant-scoped project CRUD.
 - `/v1/workspaces/:workspaceId/tasks` — tenant-scoped task lifecycle, events and agent handoffs.
-- `/internal/agent-requests` — separately token-authenticated worker claim/completion contract.
+- `/internal/agent-requests` — separately token-authenticated worker claim/completion/failure contract with lease recovery.\n\n## AI review worker\n\nThe standalone `npm run worker` process polls the internal queue and uses the OpenAI Responses API to generate specialist task reviews. It is deliberately **review-only**: the model has no customer-data tools and cannot change business records, deploy software, or contact people. A successful run attaches its review to the task and moves it to `review` (or `blocked` when information is missing); a failed run records a failure and blocks the task.\n\nBuild first with `npm run build`, then run `npm run worker` in a persistent worker/container service. Configure `AGENT_WORKER_API_URL`, the same `AGENT_WORKER_TOKEN` as the API, `OPENAI_API_KEY` and `OPENAI_MODEL` as server-side secrets. The worker does not need direct Neon credentials. It is not a Vercel serverless function and should not be started inside an HTTP request handler. A missing provider key/model prevents worker startup; it does not silently fall back to a fake response.
 
 ## Engineering
 - Keep production data and credentials out of source control.
