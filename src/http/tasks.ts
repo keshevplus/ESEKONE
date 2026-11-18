@@ -111,9 +111,12 @@ tasksRouter.post("/:workspaceId/tasks/:taskId/agent-requests",async(req,res)=>{
  const input=createAgentRequest.safeParse(req.body);
  if(!input.success)return res.status(400).json({error:"invalid_agent_request",details:input.error.flatten()});
  return withAuthorizedWorkspace(req,res,async(tx,userId,workspaceId)=>{
-  const [item]=await tx.select({id:workItems.id}).from(workItems).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,workspaceId))).limit(1);
+  const [item]=await tx.select({id:workItems.id,status:workItems.status}).from(workItems).where(and(eq(workItems.id,task.data),eq(workItems.workspaceId,workspaceId))).limit(1);
   if(!item)return {notFound:true};
+  if(!canTransitionWorkItem(item.status,"in_progress"))return {conflict:true,error:"task_cannot_be_started",status:item.status};
   const [request]=await tx.insert(agentRequests).values({workspaceId,workItemId:item.id,requestedByUserId:userId,agentKey:input.data.agentKey,prompt:input.data.prompt,status:"queued"}).returning();
+  await tx.update(workItems).set({status:"in_progress",assignedAgent:input.data.agentKey,updatedAt:new Date()}).where(eq(workItems.id,item.id));
+  if(item.status!=="in_progress")await tx.insert(workItemEvents).values({workspaceId,workItemId:item.id,actorUserId:userId,eventType:"status_changed",fromStatus:item.status,toStatus:"in_progress",detail:"Started by agent request"});
   await tx.insert(workItemEvents).values({workspaceId,workItemId:item.id,actorUserId:userId,eventType:"agent_request_queued",detail:"Request "+request.id+" queued for "+request.agentKey});
   return {request:{id:request.id,status:request.status,agentKey:request.agentKey,createdAt:request.createdAt},message:"Request queued. An agent worker must claim it before work begins."};
  },true);
