@@ -47,6 +47,19 @@ A task is only `done` when implementation evidence and passing relevant tests ar
 - [ ] **EKO-054 — Tenant-isolation and authorization penetration tests** — `backlog`
 - [ ] **EKO-055 — Load, accessibility and recovery testing** — `backlog`
 
+## Proposed from the business plan (pending owner review)
+These close gaps found by comparing the KeshevPlus admin and backend with this backlog (business plan, section 3.3) and add the factory work in [docs/DELIVERY_FACTORY.md](docs/DELIVERY_FACTORY.md). They are proposals: not scheduled, not committed to.
+- [ ] **EKO-060 — Module manifest, install, enable/disable and safe removal** — `backlog` — The contract every module builds on: routes, navigation, permission keys, setup steps, migrations, events, AI tools and tests; entitlement-controlled enablement; removal that leaves no orphaned navigation or failing jobs.
+- [ ] **EKO-061 — Forms and intake module** — `backlog` — Public forms, spam control, routing into the CRM.
+- [ ] **EKO-062 — Content and site module** — `backlog` — Pages, reusable blocks, blog, media, publishing; depends on EKO-042.
+- [ ] **EKO-063 — Campaigns, chat widget and WhatsApp** — `backlog` — Extends EKO-025 with email campaigns and chat channels.
+- [ ] **EKO-064 — Marketing and ads reporting** — `backlog` — Campaign and spend reporting and source attribution; extends EKO-027.
+- [ ] **EKO-065 — Clinics pack** — `backlog` — Client records, intake and privacy controls for practices. Blocked on a legal and privacy review; synthetic data only until then.
+- [ ] **EKO-066 — Operations and QA module** — `backlog` — Todos, bugs, QA reports and release notes with created and updated date and time on every record; extends EKO-033.
+- [ ] **EKO-067 — Static preview hosting (stage 0)** — `backlog` — Public site and template previews with clearly labelled synthetic content; no backend, no real data.
+- [ ] **EKO-068 — Delivery factory: GitHub reconciliation, reusable merge gate, report generation** — `backlog` — Generic versions of the pipeline pieces proven in KeshevPlus; see the build order in the factory document.
+- [ ] **EKO-069 — Workspace provisioning pipeline** — `backlog` — Idempotent, tested creation of a workspace, owner, configuration, modules, template, domain and payment setup.
+
 ## Release discipline
 1. Build on feature branches.
 2. Merge validated work into `dev`; deploy `dev` for integration testing.

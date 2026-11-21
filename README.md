@@ -54,4 +54,4 @@ Build first with `npm run build`, then run `npm run worker` in a persistent work
 - Feature branches do not trigger preview deployments by default. Integrate on `dev`, then promote a tested release to `main`.
 
 ## Status
-This repository is the platform foundation. Several business modules and runtime integrations are still in progress. See [the delivery backlog](TODO.md), [release gates](docs/RELEASE_GATES.md), [Neon setup](docs/NEON_SETUP.md) and [architecture](docs/ARCHITECTURE.md).
+This repository is the platform foundation. Several business modules and runtime integrations are still in progress. See [the business plan](docs/ESEKONE_BUSINESS_PLAN.md), [the delivery backlog](TODO.md), [release gates](docs/RELEASE_GATES.md), [Neon setup](docs/NEON_SETUP.md) and [architecture](docs/ARCHITECTURE.md).
