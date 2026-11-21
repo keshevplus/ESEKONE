@@ -70,7 +70,7 @@ A module is an installable unit. Each declares its **routes, navigation items, p
 ### 3.3 The parity principle
 **An ESEKONE site may look completely different from KeshevPlus and still have everything KeshevPlus's admin and backend can do.** The look comes from workspace configuration (brand, template, labels, enabled modules); the capability comes from the shared engine and the modules.
 
-The table maps what the KeshevPlus application provides today to its ESEKONE home. The "ESEKONE status" column comes from the [delivery backlog](../TODO.md) on `dev` as of this draft; "not yet in backlog" is a gap to close, not a promise.
+The table maps what the KeshevPlus application provides today to its ESEKONE home. The "ESEKONE status" column comes from the [delivery backlog](../TODO.md) on `dev` as of this draft; "Proposed" entries are in the backlog's proposal section (EKO-060 to EKO-069) pending owner review, not a promise.
 
 | KeshevPlus capability (reference) | ESEKONE home | ESEKONE status |
 |---|---|---|
@@ -80,16 +80,16 @@ The table maps what the KeshevPlus application provides today to its ESEKONE hom
 | Orders and catalog | Commerce | Backlog (EKO-024) |
 | Documents, email, messaging | Communications | Backlog (EKO-025) |
 | Workflow rules | Automation | Backlog (EKO-026) |
-| Revenue and ad reports | Reporting; Marketing and ads reporting | Backlog (EKO-027); ads reporting not yet in backlog |
+| Revenue and ad reports | Reporting; Marketing and ads reporting | Backlog (EKO-027); ads reporting proposed (EKO-064) |
 | Admin AI assistant and agents | AI control plane and agents | In progress (EKO-030, EKO-031: a review worker exists; business tools and approvals remain) |
 | Activity log | Audit log | In progress (EKO-014: event storage exists; admin search and UI remain) |
-| Todo manager, bugs, QA, code audit | Operations and QA | Backlog (EKO-033); bugs, QA and audit not yet in backlog |
-| Blog, articles, landing pages | Content and site | Marketing site in progress (EKO-042); content module not yet in backlog |
-| Public forms and intake | Forms and intake | Not yet in backlog |
-| Email campaigns | Communications | Not yet in backlog |
-| Chat widget and WhatsApp | Communications | Not yet in backlog |
+| Todo manager, bugs, QA, code audit | Operations and QA | Backlog (EKO-033); module proposed (EKO-066) |
+| Blog, articles, landing pages | Content and site | Marketing site in progress (EKO-042); content module proposed (EKO-062) |
+| Public forms and intake | Forms and intake | Proposed (EKO-061) |
+| Email campaigns | Communications | Proposed (EKO-063) |
+| Chat widget and WhatsApp | Communications | Proposed (EKO-063) |
 | Multiple languages, RTL and LTR | Translation framework | In progress (EKO-041: English and Hebrew, RTL and LTR on current screens) |
-| Client records and privacy controls | Clinics pack | Not yet in backlog |
+| Client records and privacy controls | Clinics pack | Proposed (EKO-065), blocked on legal and privacy review |
 
 ### 3.4 Customizing: add, remove and extend
 In order of preference, so the platform stays maintainable:
@@ -155,7 +155,7 @@ AI may draft demo pages, copy, FAQs and sample records so previews feel populate
 
 ## 7. The factory: how ESEKONE is built and shipped
 
-ESEKONE is meant to be a factory: the same disciplined pipeline produces the platform and every release. This section summarizes the standing vision and the KeshevPlus epic that is building the pipeline.
+ESEKONE is meant to be a factory: the same disciplined pipeline produces the platform and every release. This section summarizes the standing vision and the KeshevPlus epic that is building the pipeline; the full version, with the generic-versus-KeshevPlus classification and a proposed build order, is [DELIVERY_FACTORY.md](DELIVERY_FACTORY.md).
 
 ### 7.1 Principles of the delivery vision
 - Agents produce **finished, verified work**, not drafts or status claims.
@@ -241,7 +241,7 @@ Targets are **to be set** once a baseline exists; none are invented here.
 6. **Payments:** whether ESEKONE will take a platform fee on merchant payments, and under which legal entity.
 7. **Languages:** which locales ship first beyond Hebrew and English.
 8. **Support model:** who answers customers, at what hours, with what promised response.
-9. **Factory scope:** which parts of the KeshevPlus epic #292 are built generically in ESEKONE first (suggested: the review and merge gate, GitHub-to-todo sync, report generation).
+9. **Factory scope:** confirm the build order in [DELIVERY_FACTORY.md](DELIVERY_FACTORY.md) section 5 (suggested first: the module manifest, then Operations and QA, GitHub reconciliation and the reusable merge gate).
 10. **Promotion:** `main` is 26 commits behind `dev` as of this draft. Decide when `dev` is promoted, using the gates in [RELEASE_GATES.md](RELEASE_GATES.md) and a pull request, not a direct push.
 
 ---
@@ -249,6 +249,8 @@ Targets are **to be set** once a baseline exists; none are invented here.
 ## 12. Source documents
 - [README](../README.md): product principles, repository map and core domains
 - [Architecture](ARCHITECTURE.md): trust boundaries, modules, isolation, AI safety, security baseline, release
+- [Delivery factory](DELIVERY_FACTORY.md): the delivery vision, pipeline status, generic-versus-specific classification and build order
+- [AGENTS.md](../AGENTS.md): the owner's standing direction and working rules for anyone working in this repository
 - [Release gates](RELEASE_GATES.md): when a change may merge to `dev` and be promoted to `main`; deployment cost controls
 - [Neon setup](NEON_SETUP.md): database branches, roles and connection layout
 - [Delivery backlog](../TODO.md): current task statuses referenced above
